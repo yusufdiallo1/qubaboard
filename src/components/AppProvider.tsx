@@ -80,7 +80,7 @@ function AppBootstrap({ children }: { children: ReactNode }) {
     }
   }, [S.lang, S.theme]);
 
-  // Persist preferences
+  // Persist preferences, page and view
   useEffect(() => {
     try { localStorage.setItem('quba-lang', S.lang); } catch { /* ignore */ }
   }, [S.lang]);
@@ -89,22 +89,37 @@ function AppBootstrap({ children }: { children: ReactNode }) {
     try { localStorage.setItem('quba-theme', S.theme); } catch { /* ignore */ }
   }, [S.theme]);
 
+  useEffect(() => {
+    try { localStorage.setItem('quba-page', S.page); } catch { /* ignore */ }
+  }, [S.page]);
+
+  useEffect(() => {
+    try { localStorage.setItem('quba-view', S.view); } catch { /* ignore */ }
+  }, [S.view]);
+
   return <>{children}</>;
 }
 
-function getSeed(): { lang: 'ar' | 'en'; theme: 'light' | 'dark' } {
-  if (typeof window === 'undefined') return { lang: 'ar', theme: 'light' };
+const VALID_PAGES = new Set(['board', 'timeline', 'overview', 'rooms', 'employees']);
+const VALID_VIEWS = new Set(['grid', 'list']);
+
+function getSeed(): { lang: 'ar' | 'en'; theme: 'light' | 'dark'; page: 'board' | 'timeline' | 'overview' | 'rooms' | 'employees'; view: 'grid' | 'list' } {
+  if (typeof window === 'undefined') return { lang: 'ar', theme: 'light', page: 'board', view: 'grid' };
   try {
     const lang = (localStorage.getItem('quba-lang') ?? 'ar') as 'ar' | 'en';
     const theme = (localStorage.getItem('quba-theme') ?? 'light') as 'light' | 'dark';
-    return { lang, theme };
+    const rawPage = localStorage.getItem('quba-page') ?? 'board';
+    const rawView = localStorage.getItem('quba-view') ?? 'grid';
+    const page = VALID_PAGES.has(rawPage) ? rawPage as 'board' | 'timeline' | 'overview' | 'rooms' | 'employees' : 'board';
+    const view = VALID_VIEWS.has(rawView) ? rawView as 'grid' | 'list' : 'grid';
+    return { lang, theme, page, view };
   } catch {
-    return { lang: 'ar', theme: 'light' };
+    return { lang: 'ar', theme: 'light', page: 'board', view: 'grid' };
   }
 }
 
 export default function AppProvider({ children }: { children: ReactNode }) {
-  const seed = typeof window !== 'undefined' ? getSeed() : { lang: 'ar' as const, theme: 'light' as const };
+  const seed = typeof window !== 'undefined' ? getSeed() : { lang: 'ar' as const, theme: 'light' as const, page: 'board' as const, view: 'grid' as const };
   return (
     <StoreProvider seed={seed}>
       <ServiceWorker />

@@ -86,8 +86,22 @@ input,select{font-family:inherit}
 .pchip .pn{font-size:13px;font-weight:700}
 .pchip .pr{font-size:10.5px;color:var(--faint);font-weight:600}
 
-.layout{display:flex;width:100%;align-items:flex-start}
-.sidenav{width:220px;flex:none;padding:16px 12px;border-inline-end:1px solid var(--line-soft);display:flex;flex-direction:column;gap:4px;position:sticky;top:58px;align-self:flex-start;max-height:calc(100dvh - 58px);overflow-y:auto;min-height:calc(100dvh - 58px)}
+/* ── Desktop layout: sidenav fixed to the left/right viewport edge ── */
+.layout{display:flex;width:100%;min-height:calc(100dvh - 58px)}
+.sidenav{
+  width:220px;flex:none;
+  padding:16px 12px;
+  border-inline-end:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:58px;
+  align-self:flex-start;
+  max-height:calc(100dvh - 58px);
+  overflow-y:auto;
+  /* Extend background to cover full left column height */
+  min-height:calc(100dvh - 58px);
+  background:var(--surface);
+}
+[data-theme="dark"] .sidenav{background:var(--surface)}
 .navitem{display:flex;align-items:center;gap:12px;width:100%;padding:12px 13px;border-radius:12px;
   font-size:14.5px;font-weight:650;color:var(--dim);transition:all .15s;text-align:start;position:relative}
 .navitem svg{width:19px;height:19px}
@@ -95,11 +109,11 @@ input,select{font-family:inherit}
 .navitem.on{background:color-mix(in srgb,var(--gold) 11%,var(--surface-2));color:var(--text)}
 [data-theme="dark"] .navitem.on{background:color-mix(in srgb,var(--gold) 14%,var(--surface-2))}
 .navitem.on::before{content:"";position:absolute;inset-inline-start:0;top:9px;bottom:9px;width:3px;border-radius:99px;background:var(--gold)}
-.content{flex:1;min-width:0;padding:16px clamp(12px,2.5vw,28px) 80px;max-width:1180px}
+.content{flex:1;min-width:0;padding:16px clamp(12px,2.5vw,28px) 80px}
 @media(max-width:899px){
-  .layout{flex-direction:column}
+  .layout{flex-direction:column;min-height:0}
   .sidenav{width:auto;min-height:0;flex-direction:row;gap:8px;overflow-x:auto;padding:12px clamp(14px,3vw,28px);
-    border-inline-end:none;border-bottom:1px solid var(--line);scrollbar-width:none}
+    border-inline-end:none;border-bottom:1px solid var(--line);scrollbar-width:none;background:var(--surface);position:static}
   .sidenav::-webkit-scrollbar{display:none}
   .navitem{width:auto;white-space:nowrap;flex:none;padding:10px 15px;border-radius:980px;background:var(--surface);border:1px solid var(--line)}
   .navitem.on::before{display:none}
@@ -167,8 +181,10 @@ input,select{font-family:inherit}
 .tile{text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
   padding:15px 15px 14px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;min-height:128px;
   box-shadow:var(--shadow);transition:transform .15s,box-shadow .2s,border-color .2s;cursor:pointer;
-  background-image:linear-gradient(180deg, color-mix(in srgb,var(--sc) 9%, transparent), transparent 64px)}
-.tile::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--sc)}
+  background-image:linear-gradient(180deg, color-mix(in srgb,var(--sc) 6%, transparent), transparent 48px)}
+.tile::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:3px;background:var(--sc);opacity:.7}
+[data-theme="dark"] .tile{background-image:linear-gradient(180deg, color-mix(in srgb,var(--sc) 4%, transparent), transparent 40px)}
+[data-theme="dark"] .tile::before{opacity:.5}
 .tile:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift);border-color:color-mix(in srgb,var(--sc) 45%, var(--line))}
 .tile:active{transform:translateY(0)}
 .tile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
@@ -970,7 +986,7 @@ input,select,textarea{font-size:max(16px,1em)}
 ═══════════════════════════════════════════════════════════════════════════ */
 .toast-stack{
   position:fixed;
-  inset-inline-start:50%;
+  left:50%;
   bottom:max(24px, calc(env(safe-area-inset-bottom) + 24px));
   transform:translateX(-50%);
   z-index:400;
