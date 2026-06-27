@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useReveal } from '@/lib/useReveal';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import {
   localToday,
@@ -515,7 +516,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub, icon, color, bar }: StatCardProps) {
   return (
-    <div className="stat">
+    <div className="stat stagger">
       <div className="sl">
         <span className="si" style={{ '--c': color } as React.CSSProperties}>
           {icon}
@@ -699,10 +700,13 @@ export default function OverviewScreen() {
     setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
   }, [settings, dispatch]);
 
+  // ── Scroll-reveal ──────────────────────────────────────────────────────────
+  const pageRef = useReveal();
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <div ref={pageRef as React.RefObject<HTMLDivElement>}>
       {/* Global tooltip for donuts/bars (not trend charts — those are SVG-inline) */}
       {tip.visible && (
         <div
@@ -712,21 +716,23 @@ export default function OverviewScreen() {
           {tip.text}
         </div>
       )}
-      <div className="page-h">{tl.overviewTitle}</div>
-      <div className="page-sub">{tl.overviewSub}</div>
+      <div className="page-h stagger">{tl.overviewTitle}</div>
+      <div className="page-sub stagger">{tl.overviewSub}</div>
 
       {/* Rate panel — admin only */}
       {isAdmin && settings && (
-        <RatePanel
-          lang={lang}
-          currentRate={settings.daily_rate}
-          rateSaved={rateSaved}
-          onSave={handleSaveRate}
-        />
+        <div className="reveal">
+          <RatePanel
+            lang={lang}
+            currentRate={settings.daily_rate}
+            rateSaved={rateSaved}
+            onSave={handleSaveRate}
+          />
+        </div>
       )}
 
       {/* KPI cards */}
-      <div className="stats">
+      <div className="stats stagger-group">
         <StatCard
           label={tl.occRate}
           value={`${occPct}%`}
@@ -794,7 +800,7 @@ export default function OverviewScreen() {
       </div>
 
       {/* Occupancy trend (14 days) */}
-      <div className="panel wpanel" style={{ marginTop: 14 }}>
+      <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
         <h3>{tl.occTrendTitle}</h3>
         <div className="trendwrap">
           <TrendChart
@@ -807,7 +813,7 @@ export default function OverviewScreen() {
 
       {/* Revenue trend (admin only) */}
       {isAdmin && (
-        <div className="panel wpanel" style={{ marginTop: 14 }}>
+        <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
           <h3>{tl.revTrendTitle}</h3>
           <div className="trendwrap">
             <TrendChart
@@ -820,7 +826,7 @@ export default function OverviewScreen() {
       )}
 
       {/* Donut charts side-by-side */}
-      <div className="panels">
+      <div className="panels reveal">
         {/* Occupancy donut */}
         <div className="panel">
           <h3>{tl.occTitle}</h3>
@@ -876,7 +882,7 @@ export default function OverviewScreen() {
       </div>
 
       {/* Status bars + Floor bars side-by-side */}
-      <div className="panels" style={{ marginTop: 0 }}>
+      <div className="panels reveal" style={{ marginTop: 0 }}>
         {/* Status distribution bars */}
         <div className="panel">
           <h3>{tl.statusTitle}</h3>
@@ -948,6 +954,6 @@ export default function OverviewScreen() {
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -709,7 +709,197 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 @media(max-width:560px){
   .grid{grid-template-columns:repeat(2,1fr);gap:11px}
-  .tile{min-height:118px;padding:13px}
+  .tile{min-height:118px}
   .rnum b{font-size:24px}
   .brand .nm span,.pchip .pinfo{display:none}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM — Resend-grade: subtle, fast, never bouncy
+   Centralised timing tokens + keyframes + component overrides.
+   All transitions respect prefers-reduced-motion at the bottom.
+═══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --dur-xs:80ms;  --dur-s:140ms; --dur-m:200ms; --dur-l:320ms; --dur-xl:440ms;
+  --ease-out:cubic-bezier(.2,.8,.25,1);
+  --ease-spring:cubic-bezier(.16,.85,.25,1.02);
+  --ease-pop:cubic-bezier(.2,.9,.3,1.4);
+}
+
+/* ── Nav icon + active indicator ── */
+.navitem{transition:background var(--dur-s) var(--ease-out),color var(--dur-s) var(--ease-out)}
+.navitem svg{transition:transform var(--dur-s) var(--ease-out),color var(--dur-s)}
+.navitem:hover svg{transform:scale(1.12)}
+.navitem.on svg{color:var(--gold)}
+.navitem.on::before{transition:opacity var(--dur-m) var(--ease-out),transform var(--dur-m) var(--ease-out)}
+
+/* ── Cards lift ── */
+.tile{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out),border-color var(--dur-m)}
+.tile:hover{transform:translateY(-2px)}
+.tile-photo{transition:transform var(--dur-xl) var(--ease-out)}
+.tile:hover .tile-photo{transform:scale(1.04)}
+.row{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out)}
+.row:hover{transform:translateY(-1px)}
+.rp-card{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out)}
+.stat{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out)}
+.stat:hover{transform:translateY(-1px);box-shadow:var(--glass-sheen),var(--shadow-lift)}
+
+/* ── Buttons ── */
+.btn{transition:transform var(--dur-xs),filter var(--dur-s),box-shadow var(--dur-s)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.gold:hover{filter:brightness(1.08)}
+.iconbtn{transition:transform var(--dur-xs),background var(--dur-s)}
+.iconbtn:hover{background:var(--surface-2);transform:scale(1.06)}
+.tl-navbtn{transition:transform var(--dur-xs),border-color var(--dur-s),box-shadow var(--dur-s)}
+.tl-navbtn:hover{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
+
+/* ── Drawer ── */
+.drawer{transition:transform var(--dur-l) var(--ease-out)}
+.drawer-back{transition:opacity var(--dur-m)}
+
+/* ── Sheet ── */
+@keyframes sheetUp{from{opacity:0;transform:translateY(52px) scale(.985)}to{opacity:1;transform:none}}
+.sheet.in{animation:sheetUp var(--dur-xl) var(--ease-spring) both}
+
+/* ── Menus / dropdowns ── */
+@keyframes pop{from{opacity:0;transform:translateY(-5px) scale(.97)}to{opacity:1;transform:none}}
+.menu{animation:pop var(--dur-s) var(--ease-out) both}
+
+/* ── Toast slide-up ── */
+.toast{transition:opacity var(--dur-m),transform var(--dur-m) var(--ease-out)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Scroll-reveal (IntersectionObserver) ── */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity var(--dur-l) var(--ease-out),transform var(--dur-l) var(--ease-out)}
+.reveal.in{opacity:1;transform:none}
+/* Stagger siblings inside a .stagger-group */
+.stagger-group .reveal:nth-child(1){transition-delay:0ms}
+.stagger-group .reveal:nth-child(2){transition-delay:50ms}
+.stagger-group .reveal:nth-child(3){transition-delay:100ms}
+.stagger-group .reveal:nth-child(4){transition-delay:150ms}
+.stagger-group .reveal:nth-child(5){transition-delay:200ms}
+.stagger-group .reveal:nth-child(6){transition-delay:250ms}
+.stagger-group .reveal:nth-child(7){transition-delay:300ms}
+.stagger-group .reveal:nth-child(8){transition-delay:350ms}
+/* Above-the-fold: already visible on load */
+.stagger{opacity:0;animation:rise var(--dur-l) var(--ease-out) both}
+.stagger:nth-child(1){animation-delay:0ms}
+.stagger:nth-child(2){animation-delay:60ms}
+.stagger:nth-child(3){animation-delay:120ms}
+.stagger:nth-child(4){animation-delay:180ms}
+.stagger:nth-child(5){animation-delay:240ms}
+.stagger:nth-child(6){animation-delay:300ms}
+.stagger:nth-child(7){animation-delay:360ms}
+.stagger:nth-child(8){animation-delay:420ms}
+
+/* ── Route content fade-in ── */
+.animate-fade-in-up{animation:rise var(--dur-l) var(--ease-out) both}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE SYSTEM
+   Breakpoints: phone ≤640  |  tablet 641–899  |  desktop ≥900
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Global touch targets ≥44px ── */
+button,a,[role="button"]{min-height:44px;min-width:44px}
+/* exceptions: icon-only containers that are already sized */
+.spill,.datepill,.ebadge,.rh-phase,.nights,.fnum{min-height:unset;min-width:unset}
+
+/* ── iOS: prevent zoom on input focus (≥16px font) ── */
+input,select,textarea{font-size:max(16px,1em)}
+/* restore display sizes for purely visual labels */
+.field label,.sec-l,.rate-hint,.rh-stat span,.bk-row .bl,.dlegend .li{font-size:unset}
+
+/* ── Board grid ── */
+/* phone: 1-col */
+@media(max-width:640px){
+  .grid{grid-template-columns:1fr;gap:10px}
+  .tile-photo{height:72px}
+  .content{padding:12px 14px 100px}
+  /* list view: full width rows */
+  .rows{gap:8px}
+  .row{padding:11px 14px;border-radius:14px}
+  /* stats: 2-up */
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat .sv{font-size:22px}
+  /* overview panels: single col */
+  .panels{grid-template-columns:1fr;gap:10px}
+  /* topbar compactness */
+  .topbar{padding:calc(env(safe-area-inset-top)+8px) 14px 8px;gap:8px}
+  .brand img{width:28px;height:28px}
+  .datepill{display:none}
+  .pchip .pinfo{display:none}
+  .pchip{padding-inline-end:8px}
+  /* timeline */
+  .tl-scroll{border-radius:var(--radius-sm)}
+  .tl-top{gap:8px}
+  .tl-range{font-size:14px;min-width:120px}
+  /* sheet: full height on phone */
+  .sheet{max-height:96dvh;border-radius:22px 22px 0 0;padding:6px 16px calc(env(safe-area-inset-bottom)+20px)}
+  .frow{grid-template-columns:1fr}
+  /* rooms grid */
+  .rp-grid{grid-template-columns:1fr}
+  /* employees */
+  .emp{padding:11px 13px}
+  /* page headings */
+  .page-h{font-size:20px}
+}
+/* tablet: 2-col grid */
+@media(min-width:641px) and (max-width:899px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .content{padding:14px 16px 80px}
+  /* sheet: centered card on tablet */
+  .sheet{border-radius:22px;max-height:90dvh}
+}
+/* desktop: 3–4 col auto-fill */
+@media(min-width:900px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr))}
+  .stats{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  /* sheet: centered card */
+  .sheet{border-radius:24px;max-height:88dvh}
+}
+@media(min-width:1280px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
+
+/* ── Timeline momentum scroll + snap ── */
+.tl-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+.tl-cell{scroll-snap-align:start}
+.tl-scroll::-webkit-scrollbar{height:4px}
+.tl-scroll::-webkit-scrollbar-track{background:transparent}
+.tl-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+
+/* ── Sheet: desktop centered ── */
+@media(min-width:680px){
+  .backdrop{align-items:center}
+  .sheet{border-radius:24px;max-height:88dvh;width:100%;max-width:480px}
+  .grab{display:none}
+}
+
+/* ── Safe-area insets ── */
+.content{padding-bottom:max(80px, calc(env(safe-area-inset-bottom) + 60px))}
+.topbar{padding-top:max(10px, calc(env(safe-area-inset-top) + 10px))}
+.toast{bottom:max(24px, calc(env(safe-area-inset-bottom) + 24px))}
+
+/* ── RTL responsive overrides ── */
+[dir="rtl"] .drawer{inset-inline-start:0;transform:translateX(106%)}
+[dir="rtl"] .drawer.open{transform:translateX(0)}
+
+/* ── Reduced motion: kill everything ── */
+@media(prefers-reduced-motion:reduce){
+  *,::before,::after{
+    animation-duration:1ms!important;
+    animation-delay:0ms!important;
+    transition-duration:1ms!important;
+  }
+  .reveal{opacity:1;transform:none}
+  .stagger{opacity:1}
 }
