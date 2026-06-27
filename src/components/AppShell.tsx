@@ -135,6 +135,16 @@ export default function AppShell() {
   const today = localToday();
   const isAdmin = S.user?.role === 'admin';
 
+  // Show branded splash until auth resolves — prevents flash of wrong theme/skeleton
+  const [splashVisible, setSplashVisible] = useState(true);
+  useEffect(() => {
+    if (S.user) {
+      // Small delay so the fade-out animation completes
+      const t = setTimeout(() => setSplashVisible(false), 320);
+      return () => clearTimeout(t);
+    }
+  }, [S.user]);
+
   // Local toast (for tracker link notification)
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -218,6 +228,20 @@ export default function AppShell() {
 
   return (
     <>
+      {/* ──────────────── SPLASH SCREEN (blocks flash of wrong theme/lang) ──────────────── */}
+      {splashVisible && (
+        <div className={`app-splash${S.user ? ' app-splash--out' : ''}`} aria-hidden="true">
+          <div className="app-splash-inner">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={64} height={64} className="app-splash-logo" />
+            <div className="app-splash-wordmark">قُبا</div>
+            <div className="app-splash-dots">
+              <span /><span /><span />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ──────────────── TOPBAR ──────────────── */}
       <header className="topbar">
         {/* Brand */}
