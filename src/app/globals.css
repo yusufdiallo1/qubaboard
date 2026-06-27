@@ -347,56 +347,65 @@ input,select{font-family:inherit}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
-/* Timeline wrap — relative so the edge arrow pills can sit over the header */
-.tl-wrap{position:relative}
-
-/* Glass arrow pills — pinned to the left/right edges of the header row */
-.tl-arrow{
-  position:absolute;
-  top:0;
-  z-index:10;
+/* ── Floating glass pill: the entire date navigation header ── */
+.tl-pill{
   display:flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  /* height matches .tl-headrow — set via JS or just use 100% of first child */
-  height:58px;
-  border:none;
-  cursor:pointer;
-  background:color-mix(in srgb,var(--surface-2) 88%,transparent);
-  backdrop-filter:blur(16px) saturate(160%);
-  -webkit-backdrop-filter:blur(16px) saturate(160%);
-  transition:background var(--dur-xs),transform var(--dur-xs);
+  align-items:stretch;
+  margin-bottom:10px;
+  background:color-mix(in srgb,var(--surface-2) 75%,transparent);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid color-mix(in srgb,var(--gold) 30%,var(--line));
+  border-radius:16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.14), 0 0 0 1px rgba(255,255,255,.05) inset;
+  overflow:hidden;
+}
+[data-theme="dark"] .tl-pill{
+  background:color-mix(in srgb,var(--navy) 82%,transparent);
+  border-color:color-mix(in srgb,var(--gold) 28%,rgba(255,255,255,.08));
+  box-shadow:0 4px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+/* ‹ › and Today buttons inside the pill */
+.tl-pill-btn{
+  display:flex;align-items:center;justify-content:center;
+  flex:none;
+  min-width:40px;padding:0 10px;
+  border:none;background:transparent;cursor:pointer;
   color:var(--text-2);
+  font-size:13px;font-weight:700;
+  transition:background var(--dur-xs),color var(--dur-xs),transform var(--dur-xs);
 }
-.tl-arrow svg{width:18px;height:18px;display:block}
-.tl-arrow:hover{background:color-mix(in srgb,var(--gold) 16%,var(--surface-2));color:var(--gold-deep)}
-.tl-arrow:active{transform:scaleX(.88)}
-/* left arrow — sits at the left edge of the scroll container, after the corner */
-.tl-arrow--prev{
-  left:56px; /* width of .tl-corner */
-  border-radius:0 8px 8px 0;
-  border-inline-end:1px solid color-mix(in srgb,var(--gold) 25%,var(--line));
-  box-shadow:4px 0 14px rgba(0,0,0,.18);
+.tl-pill-btn svg{width:17px;height:17px;display:block}
+.tl-pill-btn:hover{background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold-deep)}
+.tl-pill-btn:active{transform:scale(.86)}
+.tl-pill-today{color:var(--gold-deep);font-weight:800;min-width:52px;letter-spacing:.01em}
+/* thin dividers between pill sections */
+.tl-pill-div{width:1px;flex:none;background:color-mix(in srgb,var(--gold) 22%,var(--line));align-self:stretch}
+/* Rm corner label inside pill */
+.tl-pill-corner{
+  flex:none;width:52px;
+  display:grid;place-items:center;
+  font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.04em;
+  border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line));
 }
-/* right arrow — sits at the right edge of the visible scroll container */
-.tl-arrow--next{
-  right:0;
-  border-radius:8px 0 0 8px;
-  border-inline-start:1px solid color-mix(in srgb,var(--gold) 25%,var(--line));
-  box-shadow:-4px 0 14px rgba(0,0,0,.18);
+/* Scrollable date strip inside pill — hides scrollbar */
+.tl-pill-dates{
+  flex:1;
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:60px;
+  overflow-x:auto;
+  scrollbar-width:none;
 }
-[data-theme="dark"] .tl-arrow{
-  background:color-mix(in srgb,var(--navy) 90%,transparent);
-  color:var(--faint);
-}
-[data-theme="dark"] .tl-arrow:hover{background:color-mix(in srgb,var(--gold) 18%,var(--navy));color:var(--gold)}
+.tl-pill-dates::-webkit-scrollbar{display:none}
 
-.tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
-.tl{min-width:780px}
-.tl-headrow{display:flex;border-bottom:1px solid var(--line);background:var(--surface-2)}
-.tl-corner{width:56px;flex:none;border-inline-end:1px solid var(--line);display:grid;place-items:center}
-.tl-corner-label{font-size:11px;font-weight:800;color:var(--faint);letter-spacing:.04em}
+/* The date cells inside the pill reuse .tl-day styles */
+
+.tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tl-scroll::-webkit-scrollbar{display:none}
+.tl{min-width:max-content}
+/* .tl-headrow removed — header is now the floating pill above */
+.tl-corner{display:none}
 .tl-days{display:grid;grid-auto-flow:column;grid-auto-columns:60px}
 .tl-day{padding:9px 2px 8px;text-align:center;border-inline-start:1px solid var(--line-soft)}
 .tl-day:first-child{border-inline-start:none}
