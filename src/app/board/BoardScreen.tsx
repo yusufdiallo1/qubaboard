@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
+import { BoardSkeleton } from '@/components/Skeletons';
 import {
   localToday,
   fmtDate,
@@ -95,9 +96,13 @@ const FILTER_ORDER = [
 export default function BoardScreen() {
   const state = useAppState();
   const dispatch = useAppDispatch();
-  const { lang, view, filter, search, filterOpen, rooms, bookings } = state;
+  const { lang, view, filter, search, filterOpen, rooms, bookings, loading } = state;
   const t = getT(lang);
   const today = localToday();
+
+  if (loading && rooms.length === 0) {
+    return <BoardSkeleton count={8} />;
+  }
 
   // Ref for the filter dropdown so we can close on outside click
   const dropRef = useRef<HTMLDivElement>(null);

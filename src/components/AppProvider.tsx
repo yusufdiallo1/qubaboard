@@ -7,6 +7,7 @@ import { AppProvider as StoreProvider } from '@/lib/AppProvider';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { useSupabaseData } from '@/lib/useSupabase';
+import ServiceWorker from '@/components/ServiceWorker';
 
 // Inner component — must be inside StoreProvider to access store hooks
 function AppBootstrap({ children }: { children: ReactNode }) {
@@ -106,6 +107,7 @@ export default function AppProvider({ children }: { children: ReactNode }) {
   const seed = typeof window !== 'undefined' ? getSeed() : { lang: 'ar' as const, theme: 'light' as const };
   return (
     <StoreProvider seed={seed}>
+      <ServiceWorker />
       <AppBootstrap>{children}</AppBootstrap>
     </StoreProvider>
   );

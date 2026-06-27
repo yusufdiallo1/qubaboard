@@ -22,6 +22,9 @@ import OverviewScreen from '@/app/overview/OverviewScreen';
 import RoomsScreen    from '@/app/rooms/RoomsScreen';
 import EmployeesScreen from '@/app/employees/EmployeesScreen';
 import BookingSheet   from '@/components/BookingSheet';
+import ToastStack     from '@/components/ToastStack';
+import CommandPalette from '@/components/CommandPalette';
+import OfflineBanner  from '@/components/OfflineBanner';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SVG icon set — verbatim from reference prototype const I
@@ -367,10 +370,19 @@ export default function AppShell() {
       {/* ──────────────── BOOKING SHEET ──────────────── */}
       {S.open !== null && <BookingSheet />}
 
-      {/* ──────────────── TOAST ──────────────── */}
+      {/* ──────────────── TOAST (legacy local) ──────────────── */}
       <div className={`toast${toastVisible ? ' show' : ''}`} aria-live="polite">
         {toastMsg}
       </div>
+
+      {/* ──────────────── GLOBAL TOAST STACK ──────────────── */}
+      <ToastStack />
+
+      {/* ──────────────── COMMAND PALETTE ──────────────── */}
+      <CommandPalette />
+
+      {/* ──────────────── OFFLINE BANNER ──────────────── */}
+      <OfflineBanner />
     </>
   );
 }

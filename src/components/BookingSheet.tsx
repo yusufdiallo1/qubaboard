@@ -379,14 +379,6 @@ const IBed = () => (
   </svg>
 );
 
-// ---------------------------------------------------------------------------
-// Toast
-// ---------------------------------------------------------------------------
-function Toast({ msg, visible }: { msg: string; visible: boolean }) {
-  return (
-    <div className={`toast${visible ? " show" : ""}`}>{msg}</div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Custom Date Picker
@@ -503,8 +495,6 @@ export default function BookingSheet() {
   } = state;
 
   // ---- Local state that doesn't need to be in the global store ----
-  const [toastMsg, setToastMsg] = useState("");
-  const [toastVisible, setToastVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [localMaintIssue, setLocalMaintIssue] = useState("");
   const [localDesc, setLocalDesc] = useState("");
@@ -574,12 +564,12 @@ export default function BookingSheet() {
   const headLabel = creating ? tl("newBooking") : tl(focusStatus);
   const headColor = creating ? "var(--booked)" : statusColor(focusStatus);
 
-  // ---- Toast helper ----
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2800);
-  }, []);
+  // ---- Toast helper — dispatch to global store ----
+  const showToast = useCallback((msg: string, variant: "success" | "error" | "info" = "info") => {
+    const id = `bs-${Date.now()}`;
+    dispatch({ type: "PUSH_TOAST", payload: { id, message: msg, variant } });
+    setTimeout(() => dispatch({ type: "DISMISS_TOAST", payload: id }), 3000);
+  }, [dispatch]);
 
   // ---- Initialise form when editing starts ----
   useEffect(() => {
@@ -757,7 +747,8 @@ export default function BookingSheet() {
     }
     dispatch({ type: "SET_EDITING", payload: false });
     dispatch({ type: "SET_FORM", payload: null });
-  }, [form, roomNo, user, settings, openBookingId, tl, dispatch]);
+    showToast(openBookingId ? tl("bookingEdited") : tl("bookingCreated"), "success");
+  }, [form, roomNo, user, settings, openBookingId, tl, showToast, dispatch]);
 
   // ---- Cancel edit ----
   const handleCancelEdit = useCallback(() => {
@@ -775,7 +766,7 @@ export default function BookingSheet() {
       const result = await checkoutBooking(bookingId, roomNo);
       setIsSaving(false);
       if (result.error) {
-        showToast(result.error);
+        showToast(result.error, "error");
         return;
       }
       // Update local state optimistically
@@ -802,7 +793,7 @@ export default function BookingSheet() {
       const result = await deleteBooking(bookingId);
       setIsSaving(false);
       if (result.error) {
-        showToast(result.error);
+        showToast(result.error, "error");
         return;
       }
       dispatch({ type: "DELETE_BOOKING", payload: bookingId });
@@ -817,11 +808,11 @@ export default function BookingSheet() {
     const result = await setRoomOverride(roomNo, null);
     setIsSaving(false);
     if (result.error) {
-      showToast(result.error);
+      showToast(result.error, "error");
       return;
     }
     dispatch({ type: "UPDATE_ROOM", payload: { no: roomNo, override: null, issue: "" } });
-    showToast(tl("markReady"));
+    showToast(tl("markReady"), "success");
   }, [roomNo, tl, showToast, dispatch]);
 
   // ---- Set room status (empty/cleaning) ----
@@ -841,12 +832,13 @@ export default function BookingSheet() {
       const result = await setRoomOverride(roomNo, override);
       setIsSaving(false);
       if (result.error) {
-        showToast(result.error);
+        showToast(result.error, "error");
         return;
       }
       dispatch({ type: "UPDATE_ROOM", payload: { no: roomNo, override, issue: "" } });
+      showToast(tl("statusChanged"), "success");
     },
-    [roomNo, maintEntry, showToast, dispatch]
+    [roomNo, maintEntry, tl, showToast, dispatch]
   );
 
   // ---- Confirm maintenance ----
@@ -869,7 +861,7 @@ export default function BookingSheet() {
     });
     dispatch({ type: "SET_MAINT_ENTRY", payload: null });
     dispatch({ type: "SET_MAINT_ERR", payload: "" });
-    showToast(tl("issueSaved"));
+    showToast(tl("issueSaved"), "success");
   }, [roomNo, localMaintIssue, tl, showToast, dispatch]);
 
   // ---- Room details save ----
@@ -891,7 +883,7 @@ export default function BookingSheet() {
     setIsSaving(false);
 
     if (result.error) {
-      showToast(result.error);
+      showToast(result.error, "error");
       return;
     }
     dispatch({
@@ -904,7 +896,7 @@ export default function BookingSheet() {
       },
     });
     setDetailsSaved(true);
-    showToast(tl("savedDetails"));
+    showToast(tl("photoUploaded"), "success");
     setTimeout(() => setDetailsSaved(false), 2000);
   }, [roomNo, localDesc, photoFile, tl, showToast, dispatch]);
 
@@ -1026,8 +1018,6 @@ export default function BookingSheet() {
   // ---------------------------------------------------------------------------
   return (
     <>
-      <Toast msg={toastMsg} visible={toastVisible} />
-
       <div className="backdrop in" onClick={handleBackdropClick}>
         <div className="sheet in" ref={sheetRef} onClick={stopPropagation}>
           <div className="grab" />

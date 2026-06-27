@@ -14,6 +14,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useReveal } from '@/lib/useReveal';
 import { useAppState, useAppDispatch } from '@/lib/store';
+import { StatsSkeleton, ChartSkeleton } from '@/components/Skeletons';
 import {
   localToday,
   isoAdd,
@@ -596,7 +597,7 @@ const Icons = {
 export default function OverviewScreen() {
   const state = useAppState();
   const dispatch = useAppDispatch();
-  const { rooms, bookings, settings, user, lang, rateSaved } = state;
+  const { rooms, bookings, settings, user, lang, rateSaved, loading } = state;
   const tl = T[lang];
   const today = localToday();
   const isAdmin = user?.role === 'admin';
@@ -692,18 +693,36 @@ export default function OverviewScreen() {
     if (!settings) return;
     const { error } = await saveSettings(rate);
     if (error) {
-      console.error('Failed to save rate:', error);
+      const errId = `rate-err-${Date.now()}`;
+      dispatch({ type: 'PUSH_TOAST', payload: { id: errId, message: String(error), variant: 'error' } });
+      setTimeout(() => dispatch({ type: 'DISMISS_TOAST', payload: errId }), 3500);
       return;
     }
     dispatch({ type: 'SET_SETTINGS', payload: { ...settings, daily_rate: rate } });
     dispatch({ type: 'SET_RATE_SAVED', payload: true });
+    const okId = `rate-ok-${Date.now()}`;
+    dispatch({ type: 'PUSH_TOAST', payload: { id: okId, message: lang === 'ar' ? 'تم حفظ السعر الليلي' : 'Nightly rate saved', variant: 'success' } });
+    setTimeout(() => dispatch({ type: 'DISMISS_TOAST', payload: okId }), 2500);
     setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
-  }, [settings, dispatch]);
+  }, [settings, lang, dispatch]);
 
   // ── Scroll-reveal ──────────────────────────────────────────────────────────
   const pageRef = useReveal();
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (loading && rooms.length === 0) {
+    return (
+      <div>
+        <div className="page-h stagger" style={{ marginBottom: 18 }}>{tl.overviewTitle}</div>
+        <StatsSkeleton count={6} />
+        <div className="panels" style={{ marginTop: 14 }}>
+          <ChartSkeleton h={160} />
+          <ChartSkeleton h={160} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={pageRef as React.RefObject<HTMLDivElement>}>

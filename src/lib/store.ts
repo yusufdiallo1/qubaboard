@@ -26,6 +26,16 @@ import type {
   BookingForm,
 } from './types';
 
+export type ToastVariant = 'success' | 'error' | 'info';
+
+export interface Toast {
+  id: string;
+  message: string;
+  variant: ToastVariant;
+  undoKey?: string;
+  duration?: number;
+}
+
 // ---------------------------------------------------------------------------
 // State shape
 // ---------------------------------------------------------------------------
@@ -85,6 +95,15 @@ export interface AppState {
 
   // Employees (fetched from profiles table)
   employees: { id: string; name: string; username: string; role: 'admin' | 'staff' }[];
+
+  // Toast notifications
+  toasts: Toast[];
+
+  // Loading state
+  loading: boolean;
+
+  // Command palette
+  paletteOpen: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +165,15 @@ export const initialState: AppState = {
 
   // Employees
   employees: [],
+
+  // Toasts
+  toasts: [],
+
+  // Loading
+  loading: true,
+
+  // Command palette
+  paletteOpen: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -206,7 +234,17 @@ export type AppAction =
   | { type: 'SET_RATE_SAVED'; payload: boolean }
 
   // Realtime
-  | { type: 'SET_REALTIME_STATUS'; payload: 'connecting' | 'ok' | 'error' };
+  | { type: 'SET_REALTIME_STATUS'; payload: 'connecting' | 'ok' | 'error' }
+
+  // Toasts
+  | { type: 'PUSH_TOAST'; payload: Toast }
+  | { type: 'DISMISS_TOAST'; payload: string }
+
+  // Loading
+  | { type: 'SET_LOADING'; payload: boolean }
+
+  // Command palette
+  | { type: 'SET_PALETTE_OPEN'; payload: boolean };
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -374,6 +412,21 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     // ---- Realtime ----
     case 'SET_REALTIME_STATUS':
       return { ...state, realtimeStatus: action.payload };
+
+    // ---- Toasts ----
+    case 'PUSH_TOAST':
+      return { ...state, toasts: [...state.toasts, action.payload] };
+
+    case 'DISMISS_TOAST':
+      return { ...state, toasts: state.toasts.filter((t) => t.id !== action.payload) };
+
+    // ---- Loading ----
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+
+    // ---- Command palette ----
+    case 'SET_PALETTE_OPEN':
+      return { ...state, paletteOpen: action.payload };
 
     default:
       return state;

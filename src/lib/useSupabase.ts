@@ -107,7 +107,9 @@ export function useSupabaseData() {
       }
     }
 
-    fetchAll();
+    fetchAll().finally(() => {
+      dispatch({ type: "SET_LOADING", payload: false });
+    });
 
     // --------------------------------------------------------- realtime setup
     const channel = supabase
