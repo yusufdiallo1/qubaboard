@@ -134,6 +134,7 @@ function TimelineView() {
   const { lang, tlStart, bookings, rooms } = useAppState();
   const dispatch = useAppDispatch();
   const t = T[lang];
+  const isRtl = lang === "ar";
 
   const today = localToday();
 
@@ -287,10 +288,31 @@ function TimelineView() {
       {/* Scrollable timeline grid */}
       <div className="tl-scroll">
         <div className="tl">
-          {/* Header row */}
+          {/* Header row — corner holds the ‹ › pill + room label */}
           <div className="tl-headrow">
             <div className="tl-corner">
-              {lang === "ar" ? "غرفة" : "Rm"}
+              {/* Floating nav pill sits inside the corner, overlapping the header */}
+              <div className="tl-datepill">
+                <button
+                  className="tl-datepill-btn"
+                  onClick={handlePrev}
+                  aria-label={lang === "ar" ? "السابق" : "Previous"}
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
+                  </svg>
+                </button>
+                <button
+                  className="tl-datepill-btn"
+                  onClick={handleNext}
+                  aria-label={lang === "ar" ? "التالي" : "Next"}
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
+                  </svg>
+                </button>
+              </div>
+              <span className="tl-corner-label">{lang === "ar" ? "غرفة" : "Rm"}</span>
             </div>
             <div className="tl-days">
               {days.map((day, idx) => {
