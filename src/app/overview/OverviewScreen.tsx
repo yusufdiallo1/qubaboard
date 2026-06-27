@@ -239,12 +239,12 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         </g>
       ))}
 
-      {/* Area fill — clipped */}
+      {/* Area fill — clipped, fades in after line draws */}
       {max > 0 && (
-        <path d={areaPath} fill={color} opacity={0.12} clipPath={`url(#${clipId})`} />
+        <path d={areaPath} fill={color} clipPath={`url(#${clipId})`} className="chart-area" />
       )}
 
-      {/* Main line */}
+      {/* Main line — draws in from left using pathLength normalization */}
       {max > 0 && (
         <path
           d={smoothLine}
@@ -254,6 +254,8 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
           strokeLinejoin="round"
           strokeLinecap="round"
           clipPath={`url(#${clipId})`}
+          pathLength={1000}
+          style={{ strokeDasharray: 1000, strokeDashoffset: 1000, animation: 'chart-draw .9s cubic-bezier(.4,0,.2,1) forwards' }}
         />
       )}
 
@@ -262,7 +264,7 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 4" />
       )}
 
-      {/* Dots at each data point */}
+      {/* Dots at each data point — pop in after line */}
       {max > 0 && series.map((p, i) => p.v > 0 ? (
         <circle
           key={i}
@@ -272,6 +274,8 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
           fill={color}
           stroke="var(--surface)"
           strokeWidth={1.5}
+          className="chart-dot"
+          style={{ animationDelay: `${0.55 + i * 0.035}s` }}
         />
       ) : null)}
 
@@ -384,9 +388,13 @@ function DonutChart({ segs, top, bottom, onTip, onTipHide }: DonutProps) {
         strokeDashoffset={(C - offset).toFixed(2)}
         transform="rotate(-90 70 70)"
         data-tip={s.tip}
-        style={{ cursor: 'pointer', transition: 'stroke-width .15s' }}
-        onMouseEnter={(e) => onTip(s.tip, e)}
-        onMouseLeave={onTipHide}
+        style={{
+          cursor: 'pointer',
+          transition: 'stroke-width .15s',
+          animation: `donut-in .65s cubic-bezier(.4,0,.2,1) ${idx * 0.1}s both`,
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as SVGCircleElement).style.strokeWidth = '24'; onTip(s.tip, e); }}
+        onMouseLeave={(e) => { (e.currentTarget as SVGCircleElement).style.strokeWidth = '18'; onTipHide(); }}
       />
     );
     offset += len;
