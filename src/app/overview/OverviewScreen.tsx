@@ -15,6 +15,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useReveal } from '@/lib/useReveal';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { StatsSkeleton, ChartSkeleton } from '@/components/Skeletons';
+import { useCountUp } from '@/lib/useCountUp';
 import {
   localToday,
   isoAdd,
@@ -509,13 +510,21 @@ function RatePanel({ lang, currentRate, rateSaved, onSave }: RatePanelProps) {
 interface StatCardProps {
   label: string;
   value: string;
+  rawValue?: number;       // if provided, count-up animation is applied
+  suffix?: string;         // appended after the count-up number
+  prefix?: string;         // prepended before the count-up number
   sub: string | null;
   icon: React.ReactNode;
   color: string;
   bar: number | null;  // percentage 0–100, or null to hide
 }
 
-function StatCard({ label, value, sub, icon, color, bar }: StatCardProps) {
+function StatCard({ label, value, rawValue, suffix, prefix, sub, icon, color, bar }: StatCardProps) {
+  const animated = useCountUp(rawValue ?? 0, 800);
+  const displayValue = rawValue !== undefined
+    ? `${prefix ?? ''}${animated.toLocaleString()}${suffix ?? ''}`
+    : value;
+
   return (
     <div className="stat stagger">
       <div className="sl">
@@ -524,7 +533,7 @@ function StatCard({ label, value, sub, icon, color, bar }: StatCardProps) {
         </span>
         {label}
       </div>
-      <div className="sv">{value}</div>
+      <div className="sv">{displayValue}</div>
       {bar !== null && (
         <div className="sbar">
           <i style={{ width: `${bar}%`, background: color, display: 'block', height: '100%', borderRadius: 99, transition: 'width .5s' }} />
@@ -755,6 +764,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.occRate}
           value={`${occPct}%`}
+          rawValue={occPct}
+          suffix="%"
           sub={null}
           icon={Icons.gauge}
           color="var(--gold-deep)"
@@ -763,6 +774,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.occupiedRooms}
           value={`${inHouse} / ${totalRooms}`}
+          rawValue={inHouse}
+          suffix={` / ${totalRooms}`}
           sub={tl.occupied_lab}
           icon={Icons.bed}
           color="var(--booked)"
@@ -771,6 +784,7 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.arrivals}
           value={String(counts.arrivals || 0)}
+          rawValue={counts.arrivals || 0}
           sub={null}
           icon={Icons.arrive}
           color="var(--info)"
@@ -779,6 +793,7 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.departuresLab}
           value={String(counts.checkout || 0)}
+          rawValue={counts.checkout || 0}
           sub={null}
           icon={Icons.depart}
           color="var(--checkout)"
@@ -787,6 +802,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.revenue}
           value={fmtMoney(rev)}
+          rawValue={Math.round(rev)}
+          prefix="﷼ "
           sub={tl.revenueSub}
           icon={Icons.money}
           color="var(--free)"
@@ -795,6 +812,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.adr}
           value={fmtMoney(adr)}
+          rawValue={Math.round(adr)}
+          prefix="﷼ "
           sub={tl.adrSub}
           icon={Icons.chart}
           color="var(--cleaning)"
@@ -803,6 +822,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.revpar}
           value={fmtMoney(revpar)}
+          rawValue={Math.round(revpar)}
+          prefix="﷼ "
           sub={tl.revparSub}
           icon={Icons.gauge}
           color="var(--info)"
@@ -811,6 +832,8 @@ export default function OverviewScreen() {
         <StatCard
           label={tl.avgStay}
           value={`${avgStay ? avgStay.toFixed(1) : '0'} ${tl.nightsShort}`}
+          rawValue={Math.round(avgStay || 0)}
+          suffix={` ${tl.nightsShort}`}
           sub={tl.avgStaySub}
           icon={Icons.timeline}
           color="var(--booked)"

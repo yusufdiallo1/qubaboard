@@ -893,6 +893,33 @@ input,select,textarea{font-size:max(16px,1em)}
 [dir="rtl"] .drawer{inset-inline-start:0;transform:translateX(106%)}
 [dir="rtl"] .drawer.open{transform:translateX(0)}
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOGIN PREMIUM — drifting gold orb, frosted card
+═══════════════════════════════════════════════════════════════════════════ */
+@keyframes gold-drift{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:.7}
+  33%{transform:translate(-48%,-52%) scale(1.05);opacity:.9}
+  66%{transform:translate(-52%,-48%) scale(.97);opacity:.75}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:.7}
+}
+.login-glow{
+  position:fixed;top:30%;left:50%;
+  width:min(620px,90vw);height:min(360px,50vh);
+  border-radius:50%;
+  background:radial-gradient(ellipse, color-mix(in srgb,var(--gold) 28%,transparent) 0%, transparent 70%);
+  pointer-events:none;z-index:0;
+  animation:gold-drift 8s ease-in-out infinite;
+}
+@media(prefers-reduced-motion:reduce){.login-glow{animation:none}}
+
+/* Checkout success pulse */
+@keyframes success-pulse{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--free) 55%,transparent)}
+  70%{box-shadow:0 0 0 18px transparent}
+  100%{box-shadow:0 0 0 0 transparent}
+}
+.success-pulse{animation:success-pulse .7s ease-out both}
+
 /* ── Reduced motion: kill everything ── */
 @media(prefers-reduced-motion:reduce){
   *,::before,::after{

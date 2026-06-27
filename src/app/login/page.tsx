@@ -292,6 +292,9 @@ export default function LoginPage() {
         @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
       `}</style>
 
+      {/* Drifting gold glow — ambient brand feel */}
+      <div className="login-glow" aria-hidden="true" />
+
       <div className="login">
         {/* top-right: lang + theme */}
         <div className="login-top">
