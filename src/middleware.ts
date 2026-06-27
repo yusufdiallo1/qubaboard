@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -23,8 +23,22 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // refreshes the session cookie if expired
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  const isLoginPage = pathname === "/login";
+  const isPublic = isLoginPage || pathname.startsWith("/_next") || pathname.startsWith("/favicon");
+
+  // Redirect unauthenticated users to /login
+  if (!user && !isPublic) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Redirect authenticated users away from login
+  if (user && isLoginPage) {
+    return NextResponse.redirect(new URL("/board", request.url));
+  }
+
   return response;
 }
 
