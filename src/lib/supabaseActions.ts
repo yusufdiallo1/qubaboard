@@ -273,8 +273,7 @@ export async function saveSettings(
 
   const { error } = await supabase
     .from("app_settings")
-    .update({ daily_rate: dailyRate })
-    .eq("id", 1);
+    .upsert({ id: 1, daily_rate: dailyRate });
 
   return { error: error?.message ?? null };
 }
@@ -336,6 +335,27 @@ export async function addEmployee(
   }
 
   return { error: null };
+}
+
+// ---------------------------------------------------------------------------
+// savePreferences
+// ---------------------------------------------------------------------------
+
+/**
+ * Persist the current user's lang + theme to their profile row.
+ * Called whenever the user toggles language or theme.
+ */
+export async function savePreferences(
+  userId: string,
+  lang: "ar" | "en",
+  theme: "light" | "dark",
+): Promise<{ error: string | null }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ lang, theme })
+    .eq("id", userId);
+  return { error: error?.message ?? null };
 }
 
 // ---------------------------------------------------------------------------

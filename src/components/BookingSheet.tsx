@@ -430,7 +430,9 @@ function DatePicker({
     const mm = String(m).padStart(2, "0");
     const dd = String(d).padStart(2, "0");
     const iso = `${y}-${mm}-${dd}`;
-    const muted = which === "out" && minDate != null && iso <= minDate;
+    const isPast = iso < today;
+    const isTooEarly = which === "out" && minDate != null && iso <= minDate;
+    const muted = isPast || isTooEarly;
     let cls = "dp-day";
     if (iso === today) cls += " today";
     if (iso === selectedDate) cls += " sel";

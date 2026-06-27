@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
 import {
@@ -128,8 +128,8 @@ export default function BoardScreen() {
     return displayBooking(r.no, bookings, today);
   }
 
-  // Count helper that mirrors prototype counts()
-  function counts(): Record<string, number> {
+  // Count helper that mirrors prototype counts() — memoized
+  const cnts = useMemo((): Record<string, number> => {
     const c: Record<string, number> = {
       all: rooms.length,
       empty: 0,
@@ -147,10 +147,11 @@ export default function BoardScreen() {
       }
     });
     return c;
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, bookings, today]);
 
-  // Occupancy helper — rooms with status booked or checkout
-  function occupancy() {
+  // Occupancy helper — memoized
+  const occ = useMemo(() => {
     const inHouse = rooms.filter(r => {
       const s = roomStatusLocal(r);
       return s === 'booked' || s === 'checkout';
@@ -158,10 +159,11 @@ export default function BoardScreen() {
     const total = rooms.length;
     const pct = total > 0 ? Math.round((inHouse / total) * 100) : 0;
     return { inHouse, total, pct };
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, bookings, today]);
 
-  // Visible rooms after filter + search
-  function visibleRooms(): Room[] {
+  // Visible rooms after filter + search — memoized
+  const visible = useMemo((): Room[] => {
     const q = search.trim().toLowerCase();
     const f = filter;
     return rooms.filter(r => {
@@ -183,7 +185,8 @@ export default function BoardScreen() {
       }
       return true;
     });
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, bookings, today, filter, search]);
 
   // Description helper (show in active language if cached, else fall back to original)
   function descFor(r: Room): string {
@@ -192,10 +195,6 @@ export default function BoardScreen() {
     if (cached) return cached;
     return r.description;
   }
-
-  const occ = occupancy();
-  const cnts = counts();
-  const visible = visibleRooms();
 
   // ---------------------------------------------------------------------------
   // Open sheet action

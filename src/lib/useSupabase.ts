@@ -76,77 +76,34 @@ export function useSupabaseData() {
         });
       }
 
-      // Fetch profiles (employees list)
-      const { data: profiles, error: profilesErr } = await supabase
-        .from("profiles")
-        .select("id, name, role, created_at")
-        .order("created_at", { ascending: true });
+      // Fetch profiles with usernames via RPC (joins auth.users for email)
+      // RPC returns lang + theme columns now too
+      const { data: withEmails, error: profilesErr } = await supabase.rpc(
+        "get_profiles_with_usernames",
+      ) as { data: Array<{ id: string; name: string; role: string; email: string; lang?: string; theme?: string }> | null; error: unknown };
 
       if (profilesErr) {
-        console.error(
-          "[useSupabaseData] profiles fetch error:",
-          profilesErr.message,
-        );
+        console.error("[useSupabaseData] profiles fetch error:", profilesErr);
       } else {
-        // Derive username from auth.users email — stored in profiles as
-        // email = username@aurion.local, so we reconstruct via a separate
-        // auth admin query if available, but since this is the browser client
-        // we rely on a join or a stored username column.
-        //
-        // The profiles table in schema.sql does NOT have a username column,
-        // so we fetch the corresponding auth user email via a custom RPC or
-        // accept that username is the profile id prefix.
-        //
-        // Pattern per spec: username = email.split('@')[0] where
-        // email = username@aurion.local.  The profiles table holds user id
-        // which maps to auth.users.id.  We fetch the email separately via the
-        // Supabase auth API (available on browser client as getUser, but that
-        // only returns the current user).  For the employees list we need all
-        // users — this requires either a server action or a view.
-        //
-        // We use a Supabase database view "profiles_with_email" if available,
-        // otherwise fall back to using the profile id as username (admin UI
-        // can still display name + role).  The addEmployee server action stores
-        // the username as the email prefix, so we reconstruct it by calling the
-        // /api/profiles-with-usernames route if needed.
-        //
-        // For now, the username is derived client-side as the first segment of
-        // the profile name if it contains an "@", otherwise we fetch it from the
-        // auth users table via a database function exposed as an RPC.
-        //
-        // Simplest safe approach: call an RPC that returns profiles + email prefix.
-        // If the RPC doesn't exist, fall back to showing id.
-        const employees: Employee[] = (profiles ?? []).map((p) => ({
-          id: p.id as string,
-          name: p.name as string,
-          username: "", // filled in below if the RPC succeeds
-          role: p.role as "admin" | "staff",
+        const employees: Employee[] = (withEmails ?? []).map((p) => ({
+          id: p.id,
+          name: p.name ?? "",
+          username: (p.email ?? "").split("@")[0],
+          role: (p.role ?? "staff") as "admin" | "staff",
         }));
-
-        // Try to enrich with usernames via RPC (created in Prompt 2 migration)
-        const { data: withEmails } = await supabase.rpc(
-          "get_profiles_with_usernames",
-        );
-
-        if (withEmails && Array.isArray(withEmails)) {
-          const emailMap: Record<string, string> = {};
-          (
-            withEmails as Array<{ id: string; email: string }>
-          ).forEach((row) => {
-            // email = username@aurion.local → username
-            emailMap[row.id] = (row.email ?? "").split("@")[0];
-          });
-          employees.forEach((emp) => {
-            emp.username = emailMap[emp.id] ?? emp.id;
-          });
-        } else {
-          // Fallback: use name as username proxy
-          employees.forEach((emp) => {
-            emp.username = emp.name;
-          });
-        }
-
         dispatch({ type: "SET_EMPLOYEES", payload: employees });
+
+        // Apply current user's saved lang/theme from their profile row
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          const myProfile = (withEmails ?? []).find(p => p.id === authUser.id);
+          if (myProfile?.lang) {
+            dispatch({ type: "SET_LANG", payload: myProfile.lang as "ar" | "en" });
+          }
+          if (myProfile?.theme) {
+            dispatch({ type: "SET_THEME", payload: myProfile.theme as "light" | "dark" });
+          }
+        }
       }
     }
 
@@ -233,8 +190,11 @@ export function useSupabaseData() {
       )
 
       .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          console.error("[useSupabaseData] realtime channel error");
+        if (status === "SUBSCRIBED") {
+          dispatch({ type: "SET_REALTIME_STATUS", payload: "ok" });
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          dispatch({ type: "SET_REALTIME_STATUS", payload: "error" });
+          console.error("[useSupabaseData] realtime channel:", status);
         }
       });
 

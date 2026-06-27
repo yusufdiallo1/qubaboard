@@ -11,7 +11,7 @@
  * - All charts interactive: hover on hit-rects, donut segments thicken, bars highlight.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import {
   localToday,
@@ -23,7 +23,7 @@ import {
 } from '@/lib/helpers';
 import type { Room, Booking, BookingSource, RoomStatus } from '@/lib/types';
 import { T } from '@/lib/i18n';
-import { createClient } from '@/lib/supabase/client';
+import { saveSettings } from '@/lib/supabaseActions';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants (mirrors prototype)
@@ -107,11 +107,11 @@ function useTooltip() {
   const [tip, setTip] = useState<TooltipState>({ visible: false, text: '', x: 0, y: 0 });
 
   const show = useCallback((text: string, e: React.MouseEvent) => {
-    setTip({ visible: true, text, x: e.clientX + 12, y: e.clientY - 28 });
+    setTip({ visible: true, text, x: e.clientX, y: e.clientY });
   }, []);
 
   const move = useCallback((e: React.MouseEvent) => {
-    setTip((prev) => ({ ...prev, x: e.clientX + 12, y: e.clientY - 28 }));
+    setTip((prev) => ({ ...prev, x: e.clientX, y: e.clientY }));
   }, []);
 
   const hide = useCallback(() => {
@@ -135,95 +135,206 @@ interface TrendChartProps {
   series: TrendPoint[];
   color: string;
   suffix: string;
-  onTip: (text: string, e: React.MouseEvent) => void;
-  onTipMove: (e: React.MouseEvent) => void;
-  onTipHide: () => void;
 }
 
-function TrendChart({ series, color, suffix, onTip, onTipMove, onTipHide }: TrendChartProps) {
+function TrendChart({ series, color, suffix }: TrendChartProps) {
+  const [localTip, setLocalTip] = useState<{ visible: boolean; text: string; pct: number }>({ visible: false, text: '', pct: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
   const W = 560;
-  const H = 150;
-  const PT = 12;
-  const PB = 22;
-  const PX = 12;
+  const H = 168;
+  const PT = 20;   // extra top padding for Y-axis labels
+  const PB = 24;
+  const PL = 38;   // left padding for Y-axis
+  const PR = 8;
   const n = series.length || 1;
 
   const vals = series.map((p) => p.v);
-  const max = Math.max(...vals, 1);
+  const max = Math.max(...vals, 0);
 
-  const X = (i: number) => PX + (W - 2 * PX) * (n <= 1 ? 0 : i / (n - 1));
-  const Y = (v: number) => (H - PB) - (H - PT - PB) * (v / max);
+  // Nice round Y-axis max: ceil to next tidy number
+  function niceMax(v: number): number {
+    if (v === 0) return 10;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    return Math.ceil(v / mag) * mag;
+  }
+  const yMax = niceMax(max);
 
-  const linePoints = series.map((p, i) => `${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+  const X = (i: number) => PL + (W - PL - PR) * (n <= 1 ? 0.5 : i / (n - 1));
+  const Y = (v: number) => max === 0 ? (H - PB) : PT + (H - PT - PB) * (1 - v / yMax);
 
-  const areaPath =
-    `M${X(0).toFixed(1)},${(H - PB).toFixed(1)} ` +
-    series.map((p, i) => `L${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ') +
-    ` L${X(n - 1).toFixed(1)},${(H - PB).toFixed(1)} Z`;
+  // Cardinal spline tension=0.4 — smooth, no overshoot
+  const pts = series.map((p, i) => ({ x: X(i), y: Y(p.v) }));
 
-  const cw = (W - 2 * PX) / Math.max(n - 1, 1);
+  const cardinalSegments = (points: {x:number;y:number}[]) => {
+    const t = 0.4;
+    let d = '';
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(i - 1, 0)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(i + 2, points.length - 1)];
+      const cp1x = p1.x + (p2.x - p0.x) * t / 2;
+      const cp1y = p1.y + (p2.y - p0.y) * t / 2;
+      const cp2x = p2.x - (p3.x - p1.x) * t / 2;
+      const cp2y = p2.y - (p3.y - p1.y) * t / 2;
+      if (i === 0) d += `M${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+      d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+    }
+    return d;
+  };
+
+  const smoothLine = pts.length > 1 ? cardinalSegments(pts) : (pts.length === 1 ? `M${pts[0].x},${pts[0].y}` : '');
+  const baseline = H - PB;
+  const areaPath = smoothLine
+    ? `M${pts[0].x.toFixed(1)},${baseline.toFixed(1)} L${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}` +
+      smoothLine.replace(/^M[^ ]+ /, ' ') +
+      ` L${pts[pts.length-1].x.toFixed(1)},${baseline.toFixed(1)} Z`
+    : '';
+
+  // Y-axis: 3 ticks at 0, 50%, 100% of yMax
+  const yTicks = [0, 0.5, 1].map(f => ({ v: Math.round(yMax * f), y: Y(yMax * f) }));
+
+  // Column hit boundaries: midpoint between adjacent dots
+  const hitLeft = (i: number) => i === 0 ? PL : (X(i - 1) + X(i)) / 2;
+  const hitRight = (i: number) => i === n - 1 ? W : (X(i) + X(i + 1)) / 2;
+
+  const clipId = `clip-${color.replace(/[^a-z]/gi, '')}`;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="trend" style={{ width: '100%', height: 'auto', display: 'block' }}>
-      {/* Area fill */}
-      <path d={areaPath} fill={color} opacity={0.14} />
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${W} ${H}`}
+      className="trend"
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+      onMouseLeave={() => setLocalTip(t => ({ ...t, visible: false }))}
+    >
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={PL} y={PT} width={W - PL - PR} height={H - PT - PB + 1} />
+        </clipPath>
+      </defs>
 
-      {/* Line */}
-      <polyline
-        points={linePoints}
-        fill="none"
-        stroke={color}
-        strokeWidth={2.6}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-
-      {/* Dots */}
-      {series.map((p, i) => (
-        <circle
-          key={i}
-          className="tdot"
-          cx={X(i).toFixed(1)}
-          cy={Y(p.v).toFixed(1)}
-          r={3.3}
-          fill={color}
-          stroke="var(--surface)"
-          strokeWidth={1.4}
-        />
+      {/* Horizontal grid lines */}
+      {yTicks.map((tk, i) => (
+        <g key={`g-${i}`}>
+          <line
+            x1={PL} y1={tk.y.toFixed(1)}
+            x2={W - PR} y2={tk.y.toFixed(1)}
+            stroke="var(--line-soft)"
+            strokeWidth={i === 0 ? 1 : 0.8}
+          />
+          <text
+            x={(PL - 5).toFixed(1)}
+            y={(tk.y + 3.5).toFixed(1)}
+            textAnchor="end"
+            fontSize={8}
+            fontWeight={600}
+            fill="var(--faint)"
+          >
+            {suffix === '%' ? `${tk.v}%` : tk.v === 0 ? '0' : `${(tk.v / 1000).toFixed(tk.v >= 1000 ? 0 : 1)}k`}
+          </text>
+        </g>
       ))}
 
-      {/* Day axis labels — every other label + always last */}
+      {/* Area fill — clipped */}
+      {max > 0 && (
+        <path d={areaPath} fill={color} opacity={0.12} clipPath={`url(#${clipId})`} />
+      )}
+
+      {/* Main line */}
+      {max > 0 && (
+        <path
+          d={smoothLine}
+          fill="none"
+          stroke={color}
+          strokeWidth={2.4}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          clipPath={`url(#${clipId})`}
+        />
+      )}
+
+      {/* Zero baseline dashed when no data */}
+      {max === 0 && (
+        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 4" />
+      )}
+
+      {/* Dots at each data point */}
+      {max > 0 && series.map((p, i) => p.v > 0 ? (
+        <circle
+          key={i}
+          cx={X(i).toFixed(1)}
+          cy={Y(p.v).toFixed(1)}
+          r={3}
+          fill={color}
+          stroke="var(--surface)"
+          strokeWidth={1.5}
+        />
+      ) : null)}
+
+      {/* Day axis labels */}
       {series.map((p, i) =>
         i % 2 === 0 || i === n - 1 ? (
           <text
             key={`ax-${i}`}
             x={X(i).toFixed(1)}
-            y={H - 6}
+            y={H - 7}
             textAnchor="middle"
-            className="ax"
-            style={{ fontSize: 9, fill: 'var(--faint)', fontWeight: 600 }}
+            fontSize={8.5}
+            fontWeight={600}
+            fill="var(--faint)"
           >
             {p.x}
           </text>
         ) : null,
       )}
 
-      {/* Transparent full-height hit-rects — fill MUST be "transparent", not omitted */}
-      {series.map((p, i) => (
-        <rect
-          key={`hit-${i}`}
-          className="thit"
-          x={(X(i) - cw / 2).toFixed(1)}
-          y={0}
-          width={cw.toFixed(1)}
-          height={H - PB}
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onMouseEnter={(e) => onTip(`${p.l}: ${p.v}${suffix}`, e)}
-          onMouseMove={onTipMove}
-          onMouseLeave={onTipHide}
-        />
-      ))}
+      {/* Hit-rects + inline tooltip */}
+      {series.map((p, i) => {
+        const lx = hitLeft(i);
+        const rx = hitRight(i);
+        const cx = X(i);
+        const tipText = `${p.l}: ${p.v}${suffix}`;
+        const isActive = localTip.visible && localTip.text === tipText;
+        const tipW = Math.max(tipText.length * 4.8 + 16, 40);
+        const tipH = 15;
+        const tipX = Math.min(Math.max(cx - tipW / 2, PL), W - tipW - 2);
+        // Position tooltip clearly above the dot (or above the chart area top when dot is high)
+        const dotY = max > 0 ? Y(p.v) : H - PB;
+        const tipY = Math.max(2, dotY - tipH - 14);
+        return (
+          <g key={`col-${i}`}>
+            <rect
+              x={lx.toFixed(1)}
+              y={PT}
+              width={Math.max(0, rx - lx).toFixed(1)}
+              height={H - PT - PB}
+              fill="none"
+              pointerEvents="all"
+              style={{ cursor: 'crosshair' }}
+              onMouseEnter={() => setLocalTip({ visible: true, text: tipText, pct: i / (n - 1) })}
+              onMouseLeave={() => setLocalTip(t => ({ ...t, visible: false }))}
+            />
+            {isActive && (
+              <g>
+                {/* Column highlight */}
+                <rect x={lx.toFixed(1)} y={PT} width={Math.max(0, rx - lx).toFixed(1)} height={H - PT - PB} fill={color} fillOpacity={0.06} rx={2} />
+                {/* Vertical guide line from dot to baseline */}
+                {max > 0 && (
+                  <line x1={cx} y1={Y(p.v)} x2={cx} y2={H - PB} stroke={color} strokeWidth={1} strokeOpacity={0.3} strokeDasharray="2 2" />
+                )}
+                {/* Active dot (larger, no inner ring) */}
+                {max > 0 && (
+                  <circle cx={cx} cy={Y(p.v)} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
+                )}
+                {/* Tooltip pill */}
+                <rect x={tipX} y={tipY} width={tipW} height={tipH} rx={4.5} fill={color} fillOpacity={0.92} />
+                <text x={tipX + tipW / 2} y={tipY + 10.5} textAnchor="middle" fontSize={8.5} fontWeight={700} fill="#fff">{tipText}</text>
+              </g>
+            )}
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -267,12 +378,12 @@ function DonutChart({ segs, top, bottom, onTip, onTipHide }: DonutProps) {
         stroke={s.c}
         strokeWidth={18}
         strokeDasharray={`${len.toFixed(2)} ${(C - len).toFixed(2)}`}
-        strokeDashoffset={(-offset).toFixed(2)}
+        strokeDashoffset={(C - offset).toFixed(2)}
         transform="rotate(-90 70 70)"
+        data-tip={s.tip}
         style={{ cursor: 'pointer', transition: 'stroke-width .15s' }}
         onMouseEnter={(e) => onTip(s.tip, e)}
         onMouseLeave={onTipHide}
-        // Thicken on hover via onMouseEnter/Leave; CSS also handles :hover stroke-width:22
       />
     );
     offset += len;
@@ -578,29 +689,29 @@ export default function OverviewScreen() {
 
   const handleSaveRate = useCallback(async (rate: number) => {
     if (!settings) return;
-    try {
-      const supabase = createClient();
-      await supabase.from('app_settings').update({ daily_rate: rate }).eq('id', settings.id);
-      dispatch({ type: 'SET_SETTINGS', payload: { ...settings, daily_rate: rate } });
-      dispatch({ type: 'SET_RATE_SAVED', payload: true });
-      setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
-    } catch (err) {
-      console.error('Failed to save rate:', err);
+    const { error } = await saveSettings(rate);
+    if (error) {
+      console.error('Failed to save rate:', error);
+      return;
     }
+    dispatch({ type: 'SET_SETTINGS', payload: { ...settings, daily_rate: rate } });
+    dispatch({ type: 'SET_RATE_SAVED', payload: true });
+    setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
   }, [settings, dispatch]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Global tooltip */}
-      <div
-        className={`qtip${tip.visible ? ' show' : ''}`}
-        style={{ left: tip.x, top: tip.y, position: 'fixed', zIndex: 200, pointerEvents: 'none' }}
-      >
-        {tip.text}
-      </div>
-
+      {/* Global tooltip for donuts/bars (not trend charts — those are SVG-inline) */}
+      {tip.visible && (
+        <div
+          className="qtip show"
+          style={{ left: tip.x, top: tip.y - 44, transform: 'translateX(-50%)', position: 'fixed', zIndex: 300, pointerEvents: 'none' }}
+        >
+          {tip.text}
+        </div>
+      )}
       <div className="page-h">{tl.overviewTitle}</div>
       <div className="page-sub">{tl.overviewSub}</div>
 
@@ -690,9 +801,6 @@ export default function OverviewScreen() {
             series={occSeries14}
             color="var(--gold-deep)"
             suffix="%"
-            onTip={showTip}
-            onTipMove={moveTip}
-            onTipHide={hideTip}
           />
         </div>
       </div>
@@ -706,9 +814,6 @@ export default function OverviewScreen() {
               series={revSeries14}
               color="var(--free)"
               suffix=" SAR"
-              onTip={showTip}
-              onTipMove={moveTip}
-              onTipHide={hideTip}
             />
           </div>
         </div>

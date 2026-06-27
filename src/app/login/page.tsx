@@ -28,7 +28,7 @@ type Lang = "ar" | "en";
 type Theme = "light" | "dark";
 
 export default function LoginPage() {
-  const [lang, setLang] = useState<Lang>("ar");
+  const [lang, setLang] = useState<Lang>("en");
   const [theme, setTheme] = useState<Theme>("light");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +39,13 @@ export default function LoginPage() {
   useEffect(() => {
     const l = localStorage.getItem("quba_lang") as Lang | null;
     const t = localStorage.getItem("quba_theme") as Theme | null;
-    if (l === "ar" || l === "en") setLang(l);
+    if (l === "ar" || l === "en") {
+      setLang(l);
+    } else {
+      // Auto-detect: default English unless browser language is explicitly Arabic
+      const browserLang = (navigator.language || "").toLowerCase();
+      setLang(browserLang.startsWith("ar") ? "ar" : "en");
+    }
     if (t === "dark" || t === "light") setTheme(t);
   }, []);
 

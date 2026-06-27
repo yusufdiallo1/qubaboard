@@ -80,6 +80,9 @@ export interface AppState {
   // Rate saved animation
   rateSaved: boolean;
 
+  // Realtime connection status
+  realtimeStatus: 'connecting' | 'ok' | 'error';
+
   // Employees (fetched from profiles table)
   employees: { id: string; name: string; username: string; role: 'admin' | 'staff' }[];
 }
@@ -137,6 +140,9 @@ export const initialState: AppState = {
 
   // Rate saved animation
   rateSaved: false,
+
+  // Realtime connection status
+  realtimeStatus: 'connecting',
 
   // Employees
   employees: [],
@@ -197,7 +203,10 @@ export type AppAction =
   | { type: 'SIGN_OUT' }
 
   // Rate saved animation
-  | { type: 'SET_RATE_SAVED'; payload: boolean };
+  | { type: 'SET_RATE_SAVED'; payload: boolean }
+
+  // Realtime
+  | { type: 'SET_REALTIME_STATUS'; payload: 'connecting' | 'ok' | 'error' };
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -361,6 +370,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     // ---- Rate saved animation ----
     case 'SET_RATE_SAVED':
       return { ...state, rateSaved: action.payload };
+
+    // ---- Realtime ----
+    case 'SET_REALTIME_STATUS':
+      return { ...state, realtimeStatus: action.payload };
 
     default:
       return state;

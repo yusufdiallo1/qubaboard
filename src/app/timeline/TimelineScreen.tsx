@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store";
 import {
   localToday,
@@ -43,6 +43,23 @@ function daysInMonth(year: number, month: number): number {
 // CalView Toggle pill component
 // ---------------------------------------------------------------------------
 
+// Timeline strip icon (horizontal bars with day columns)
+const TimelineIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="3" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+    <path d="M7 14h4M7 17h8" />
+  </svg>
+);
+
+// Month calendar icon (grid with date squares)
+const MonthIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+    <path d="M3 9h18M8 2.5v4M16 2.5v4M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" />
+  </svg>
+);
+
 function CalViewToggle() {
   const { lang, calView } = useAppState();
   const dispatch = useAppDispatch();
@@ -54,15 +71,17 @@ function CalViewToggle() {
         className={`vt${calView === "timeline" ? " on" : ""}`}
         onClick={() => dispatch({ type: "SET_CAL_VIEW", payload: "timeline" })}
         aria-pressed={calView === "timeline"}
+        title={t.calTimeline}
       >
-        {t.calTimeline}
+        {TimelineIcon}
       </button>
       <button
         className={`vt${calView === "month" ? " on" : ""}`}
         onClick={() => dispatch({ type: "SET_CAL_VIEW", payload: "month" })}
         aria-pressed={calView === "month"}
+        title={t.calMonth}
       >
-        {t.calMonth}
+        {MonthIcon}
       </button>
     </div>
   );
@@ -167,6 +186,16 @@ function TimelineView() {
   const handleToday = useCallback(() => {
     dispatch({ type: "SET_TL_START", payload: 0 });
   }, [dispatch]);
+
+  // Auto-advance: when today moves past the last visible day, roll the window
+  // forward so today is always visible (rolling window that tracks real time).
+  useEffect(() => {
+    const lastVisible = isoAdd(today, tlStart + DAYS - 1);
+    if (today > lastVisible) {
+      // today is past the window — snap start so today is the first column
+      dispatch({ type: "SET_TL_START", payload: 0 });
+    }
+  }, [today, tlStart, dispatch]);
 
   // Click on empty cell → open sheet with new booking date
   const handleCellClick = useCallback(

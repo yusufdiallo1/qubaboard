@@ -14,6 +14,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { addEmployee, removeEmployee } from '@/lib/supabaseActions';
 import { T } from '@/lib/i18n';
+import { createClient } from '@/lib/supabase/client';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seed usernames that cannot be deleted
@@ -105,14 +106,25 @@ export default function EmployeesScreen() {
 
   const nameRef = useRef<HTMLInputElement>(null);
 
-  // ── Fetch updated employees list helper ──
+  // ── Fetch updated employees list from Supabase ──
   const refreshEmployees = useCallback(async () => {
-    // Re-fetch profiles from Supabase via the existing realtime subscription
-    // For an immediate refresh after mutations we use the admin client indirectly:
-    // The parent AppProvider's realtime subscription will update eventually,
-    // but we also dispatch a direct SET_EMPLOYEES after the action succeeds.
-    // This function is called with the latest data returned by the action.
-  }, []);
+    const supabase = createClient();
+    // profiles has no username column — derive it from auth email via RPC
+    const { data: rows } = await supabase.rpc('get_profiles_with_usernames') as {
+      data: Array<{ id: string; name: string; role: string; email: string }> | null;
+    };
+    if (rows) {
+      dispatch({
+        type: 'SET_EMPLOYEES',
+        payload: rows.map((p) => ({
+          id: p.id,
+          name: p.name ?? '',
+          username: (p.email ?? '').split('@')[0],
+          role: (p.role ?? 'staff') as 'admin' | 'staff',
+        })),
+      });
+    }
+  }, [dispatch]);
 
   // ── Add employee handler ──
   const handleAdd = useCallback(async () => {
@@ -140,19 +152,8 @@ export default function EmployeesScreen() {
         return;
       }
 
-      // Optimistically add to store — realtime will confirm shortly
-      dispatch({
-        type: 'SET_EMPLOYEES',
-        payload: [
-          ...employees,
-          {
-            id: `temp-${Date.now()}`,
-            name: trimName,
-            username: trimUser,
-            role: eRole,
-          },
-        ],
-      });
+      // Refetch real list from Supabase so IDs are correct
+      await refreshEmployees();
 
       // Reset form
       setEName('');
@@ -164,7 +165,7 @@ export default function EmployeesScreen() {
     } finally {
       setAdding(false);
     }
-  }, [eName, eUser, ePass, eRole, employees, dispatch, tx]);
+  }, [eName, eUser, ePass, eRole, employees, dispatch, tx, refreshEmployees]);
 
   // ── Remove employee handler ──
   const handleRemove = useCallback(async (id: string) => {

@@ -14,7 +14,7 @@ import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
 import { localToday, fmtDateLong } from '@/lib/helpers';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { savePreferences } from '@/lib/supabaseActions';
 
 import BoardScreen    from '@/app/board/BoardScreen';
 import TimelineScreen from '@/app/timeline/TimelineScreen';
@@ -126,8 +126,8 @@ const NAV_ITEMS: NavDef[] = [
 export default function AppShell() {
   const S = useAppState();
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const t = getT(S.lang);
+  const rtColor = S.realtimeStatus === 'ok' ? 'var(--free)' : S.realtimeStatus === 'error' ? 'var(--maint)' : 'var(--faint)';
 
   const today = localToday();
   const isAdmin = S.user?.role === 'admin';
@@ -157,26 +157,35 @@ export default function AppShell() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [S.menuOpen, dispatch]);
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [S.page]);
+
   // Sign out handler
   const handleSignOut = useCallback(async () => {
     dispatch({ type: 'SET_MENU_OPEN', payload: false });
     const supabase = createClient();
     await supabase.auth.signOut();
     dispatch({ type: 'SIGN_OUT' });
-    router.push('/login');
-  }, [dispatch, router]);
+    window.location.href = '/login';
+  }, [dispatch]);
 
-  // Language toggle
+  // Language toggle — persists to DB
   const handleLangToggle = useCallback(() => {
-    dispatch({ type: 'SET_LANG', payload: S.lang === 'ar' ? 'en' : 'ar' });
+    const newLang = S.lang === 'ar' ? 'en' : 'ar';
+    dispatch({ type: 'SET_LANG', payload: newLang });
     dispatch({ type: 'SET_MENU_OPEN', payload: false });
-  }, [S.lang, dispatch]);
+    if (S.user?.id) savePreferences(S.user.id, newLang, S.theme);
+  }, [S.lang, S.theme, S.user, dispatch]);
 
-  // Theme toggle
+  // Theme toggle — persists to DB
   const handleThemeToggle = useCallback(() => {
-    dispatch({ type: 'SET_THEME', payload: S.theme === 'light' ? 'dark' : 'light' });
+    const newTheme = S.theme === 'light' ? 'dark' : 'light';
+    dispatch({ type: 'SET_THEME', payload: newTheme });
     dispatch({ type: 'SET_MENU_OPEN', payload: false });
-  }, [S.theme, dispatch]);
+    if (S.user?.id) savePreferences(S.user.id, S.lang, newTheme);
+  }, [S.theme, S.lang, S.user, dispatch]);
 
   // Nav navigate
   const handleNav = useCallback((page: typeof S.page) => {
@@ -230,6 +239,20 @@ export default function AppShell() {
             {I.calendar}
           </span>
           {fmtDateLong(today, S.lang)}
+          {/* Realtime connection status dot */}
+          <span
+            title={S.realtimeStatus === 'ok' ? 'Live' : S.realtimeStatus === 'error' ? 'Disconnected' : 'Connecting…'}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: rtColor,
+              display: 'inline-block',
+              flexShrink: 0,
+              transition: 'background .5s',
+              boxShadow: S.realtimeStatus === 'ok' ? '0 0 0 2px color-mix(in srgb,var(--free) 28%,transparent)' : 'none',
+            }}
+          />
         </div>
 
         {/* Hamburger (mobile only) */}
