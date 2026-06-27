@@ -347,17 +347,55 @@ input,select{font-family:inherit}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
+/* Timeline wrap — relative so floating pill can position over it */
+.tl-wrap{position:relative}
+
+/* Floating glass nav pill — sits centered over the date header strip */
+.tl-floatpill{
+  position:absolute;
+  top:8px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:0;
+  background:color-mix(in srgb,var(--surface) 72%,transparent);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));
+  border-radius:99px;
+  padding:3px 3px;
+  box-shadow:0 4px 20px rgba(0,0,0,.18),0 0 0 1px rgba(255,255,255,.06) inset;
+  pointer-events:all;
+}
+[data-theme="dark"] .tl-floatpill{
+  background:color-mix(in srgb,var(--surface-2) 80%,transparent);
+  border-color:color-mix(in srgb,var(--gold) 35%,var(--line));
+  box-shadow:0 4px 24px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08) inset;
+}
+.tl-floatbtn{
+  display:flex;align-items:center;justify-content:center;
+  min-width:34px;height:34px;padding:0 10px;
+  border-radius:99px;border:none;
+  background:transparent;
+  color:var(--text);
+  cursor:pointer;
+  font-size:13px;font-weight:700;
+  transition:background var(--dur-xs),transform var(--dur-xs),color var(--dur-xs);
+  flex:none;
+}
+.tl-floatbtn svg{width:16px;height:16px;display:block}
+.tl-floatbtn:hover{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold-deep)}
+.tl-floatbtn:active{transform:scale(.85)}
+.tl-floatbtn--today{color:var(--gold-deep);font-weight:800;min-width:52px}
+.tl-floatdiv{width:1px;height:18px;background:color-mix(in srgb,var(--gold) 30%,var(--line));flex:none;margin:0 1px}
+
 .tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
 .tl{min-width:780px}
 .tl-headrow{display:flex;border-bottom:1px solid var(--line);background:var(--surface-2)}
-.tl-corner{width:80px;flex:none;border-inline-end:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 4px}
-.tl-corner-label{font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.04em}
-.tl-datepill{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px;gap:0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-[data-theme="dark"] .tl-datepill{background:var(--surface-2);box-shadow:0 1px 6px rgba(0,0,0,.25)}
-.tl-datepill-btn{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:99px;border:none;background:transparent;color:var(--text);cursor:pointer;transition:background var(--dur-xs),transform var(--dur-xs),color var(--dur-xs);flex:none}
-.tl-datepill-btn:hover{background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold-deep)}
-.tl-datepill-btn:active{transform:scale(.82)}
-.tl-datepill-btn svg{width:14px;height:14px;display:block}
+.tl-corner{width:56px;flex:none;border-inline-end:1px solid var(--line);display:grid;place-items:center}
+.tl-corner-label{font-size:11px;font-weight:800;color:var(--faint);letter-spacing:.04em}
 .tl-days{display:grid;grid-auto-flow:column;grid-auto-columns:60px}
 .tl-day{padding:9px 2px 8px;text-align:center;border-inline-start:1px solid var(--line-soft)}
 .tl-day:first-child{border-inline-start:none}
@@ -370,7 +408,7 @@ input,select{font-family:inherit}
 .tl-day.mstart{border-inline-start:2px solid var(--gold)!important}
 .tl-row{display:flex;border-bottom:1px solid var(--line-soft)}
 .tl-row:last-child{border-bottom:none}
-.tl-room{width:80px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border-inline-end:1px solid var(--line);background:var(--surface-2)}
+.tl-room{width:56px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border-inline-end:1px solid var(--line);background:var(--surface-2)}
 .tl-room i{font-style:normal;font-size:8.5px;color:var(--faint);font-weight:700}
 .tl-room b{font-size:15px;font-weight:800;line-height:1}
 .tl-cells{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:60px;min-height:48px}

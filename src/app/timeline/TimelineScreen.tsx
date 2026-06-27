@@ -258,12 +258,6 @@ function TimelineView() {
       {/* Top toolbar */}
       <div className="tl-top">
         <CalViewToggle />
-        <TimelineNav
-          onPrev={handlePrev}
-          onNext={handleNext}
-          onToday={handleToday}
-          rangeLabel={rangeLabel}
-        />
         {/* Legend */}
         <div className="tl-legend">
           {legendItems.map((li) => (
@@ -285,33 +279,44 @@ function TimelineView() {
         {t.tlHint}
       </p>
 
-      {/* Scrollable timeline grid */}
-      <div className="tl-scroll">
+      {/* Scrollable timeline grid — wrapper is relative so the pill can float over it */}
+      <div className="tl-wrap">
+        {/* Floating nav pill — overlaid on the date header strip, outside the scroll */}
+        <div className="tl-floatpill">
+          <button
+            className="tl-floatbtn"
+            onClick={handlePrev}
+            aria-label={lang === "ar" ? "السابق" : "Previous"}
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
+            </svg>
+          </button>
+          <div className="tl-floatdiv" />
+          <button
+            className="tl-floatbtn tl-floatbtn--today"
+            onClick={handleToday}
+            aria-label={lang === "ar" ? "اليوم" : "Today"}
+          >
+            {t.today}
+          </button>
+          <div className="tl-floatdiv" />
+          <button
+            className="tl-floatbtn"
+            onClick={handleNext}
+            aria-label={lang === "ar" ? "التالي" : "Next"}
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
+            </svg>
+          </button>
+        </div>
+
+        <div className="tl-scroll">
         <div className="tl">
-          {/* Header row — corner holds the ‹ › pill + room label */}
+          {/* Header row */}
           <div className="tl-headrow">
             <div className="tl-corner">
-              {/* Floating nav pill sits inside the corner, overlapping the header */}
-              <div className="tl-datepill">
-                <button
-                  className="tl-datepill-btn"
-                  onClick={handlePrev}
-                  aria-label={lang === "ar" ? "السابق" : "Previous"}
-                >
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
-                  </svg>
-                </button>
-                <button
-                  className="tl-datepill-btn"
-                  onClick={handleNext}
-                  aria-label={lang === "ar" ? "التالي" : "Next"}
-                >
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
-                  </svg>
-                </button>
-              </div>
               <span className="tl-corner-label">{lang === "ar" ? "غرفة" : "Rm"}</span>
             </div>
             <div className="tl-days">
@@ -400,7 +405,8 @@ function TimelineView() {
             );
           })}
         </div>
-      </div>
+        </div>{/* /tl-scroll */}
+      </div>{/* /tl-wrap */}
     </div>
   );
 }
