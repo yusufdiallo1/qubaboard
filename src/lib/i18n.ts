@@ -1,0 +1,93 @@
+// Bilingual dictionary. Arabic is the default (RTL); English toggles to LTR.
+// This is a starter set — the full dictionary lives in /reference/Quba-Room-Board.html (const T).
+// The CLAUDE.md porting prompt copies the complete set here.
+
+export type Lang = "ar" | "en";
+
+export const T: Record<Lang, Record<string, string>> = {
+  ar: {
+    app: "لوحة غرف قُبا",
+    board: "اللوحة",
+    timeline: "الجدول الزمني",
+    overview: "نظرة عامة",
+    rooms: "الغرف",
+    employees: "الموظفون",
+    signin: "تسجيل الدخول",
+    signout: "تسجيل الخروج",
+    username: "اسم المستخدم",
+    password: "كلمة المرور",
+    language: "اللغة",
+    theme: "المظهر",
+    empty: "شاغرة",
+    booked: "محجوزة",
+    checkout: "مغادرة",
+    cleaning: "تنظيف",
+    maintenance: "صيانة",
+    occupancy: "الإشغال",
+    revenue: "الإيرادات",
+    arrivals: "وصول",
+    departures: "مغادرة",
+    guest: "النزيل",
+    phone: "الهاتف",
+    checkin: "تسجيل الوصول",
+    checkout_time: "تسجيل المغادرة",
+    source: "المصدر",
+    amount: "المبلغ",
+    save: "حفظ",
+    cancel: "إلغاء",
+    floor1: "الطابق ١",
+    floor2: "الطابق ٢",
+    daily_rate: "السعر اليومي",
+    add_booking: "إضافة حجز",
+    mark_ready: "جاهزة",
+    nights: "ليالٍ",
+  },
+  en: {
+    app: "Quba Room Board",
+    board: "Board",
+    timeline: "Timeline",
+    overview: "Overview",
+    rooms: "Rooms",
+    employees: "Employees",
+    signin: "Sign in",
+    signout: "Sign out",
+    username: "Username",
+    password: "Password",
+    language: "Language",
+    theme: "Theme",
+    empty: "Empty",
+    booked: "Booked",
+    checkout: "Checkout",
+    cleaning: "Cleaning",
+    maintenance: "Maintenance",
+    occupancy: "Occupancy",
+    revenue: "Revenue",
+    arrivals: "Arrivals",
+    departures: "Departures",
+    guest: "Guest",
+    phone: "Phone",
+    checkin: "Check-in",
+    checkout_time: "Check-out",
+    source: "Source",
+    amount: "Amount",
+    save: "Save",
+    cancel: "Cancel",
+    floor1: "Floor 1",
+    floor2: "Floor 2",
+    daily_rate: "Daily rate",
+    add_booking: "Add booking",
+    mark_ready: "Mark ready",
+    nights: "nights",
+  },
+};
+
+export function t(lang: Lang, key: string): string {
+  return T[lang]?.[key] ?? T.en[key] ?? key;
+}
+
+export const SOURCE_COLORS: Record<string, string> = {
+  direct: "var(--gold)",
+  airbnb: "var(--checkout)",
+  booking: "var(--info)",
+  gathern: "var(--free)",
+};
