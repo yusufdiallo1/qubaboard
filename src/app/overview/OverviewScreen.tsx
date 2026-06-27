@@ -143,6 +143,8 @@ interface TrendChartProps {
 function TrendChart({ series, color, suffix }: TrendChartProps) {
   const [localTip, setLocalTip] = useState<{ visible: boolean; text: string; pct: number }>({ visible: false, text: '', pct: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
+  const linePathRef = useRef<SVGPathElement>(null);
+  const hasAnimatedRef = useRef(false);
   const W = 560;
   const H = 168;
   const PT = 20;   // extra top padding for Y-axis labels
@@ -168,6 +170,9 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
   // Cardinal spline tension=0.4 — smooth, no overshoot
   const pts = series.map((p, i) => ({ x: X(i), y: Y(p.v) }));
 
+  // Clamp y values to chart bounds to prevent control-point overshoot on spikes
+  const clampedPts = pts.map(p => ({ x: p.x, y: Math.max(PT, Math.min(H - PB, p.y)) }));
+
   const cardinalSegments = (points: {x:number;y:number}[]) => {
     const t = 0.4;
     let d = '';
@@ -186,16 +191,37 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
     return d;
   };
 
-  const smoothLine = pts.length > 1 ? cardinalSegments(pts) : (pts.length === 1 ? `M${pts[0].x},${pts[0].y}` : '');
+  const smoothLine = clampedPts.length > 1 ? cardinalSegments(clampedPts) : (clampedPts.length === 1 ? `M${clampedPts[0].x},${clampedPts[0].y}` : '');
   const baseline = H - PB;
   const areaPath = smoothLine
-    ? `M${pts[0].x.toFixed(1)},${baseline.toFixed(1)} L${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}` +
+    ? `M${clampedPts[0].x.toFixed(1)},${baseline.toFixed(1)} L${clampedPts[0].x.toFixed(1)},${clampedPts[0].y.toFixed(1)}` +
       smoothLine.replace(/^M[^ ]+ /, ' ') +
-      ` L${pts[pts.length-1].x.toFixed(1)},${baseline.toFixed(1)} Z`
+      ` L${clampedPts[clampedPts.length-1].x.toFixed(1)},${baseline.toFixed(1)} Z`
     : '';
 
-  // Y-axis: 3 ticks at 0, 50%, 100% of yMax
-  const yTicks = [0, 0.5, 1].map(f => ({ v: Math.round(yMax * f), y: Y(yMax * f) }));
+  // Y-axis: show 0 only when max===0; otherwise 3 ticks at 0, 50%, 100% of yMax
+  const yTicks = max === 0
+    ? [{ v: 0, y: Y(0) }]
+    : [0, 0.5, 1].map(f => ({ v: Math.round(yMax * f), y: Y(yMax * f) }));
+
+  // Run stroke-dashoffset animation exactly once via rAF, not CSS class
+  useEffect(() => {
+    if (hasAnimatedRef.current || max === 0 || !linePathRef.current) return;
+    hasAnimatedRef.current = true;
+    const el = linePathRef.current;
+    el.style.strokeDasharray = '1000';
+    el.style.strokeDashoffset = '1000';
+    const start = performance.now();
+    const dur = 900;
+    function step(now: number) {
+      const p = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.style.strokeDashoffset = String(1000 - eased * 1000);
+      if (p < 1) requestAnimationFrame(step);
+      else el.style.strokeDashoffset = '0';
+    }
+    requestAnimationFrame(step);
+  }, [max]); // only fire when max first becomes non-zero
 
   // Column hit boundaries: midpoint between adjacent dots
   const hitLeft = (i: number) => i === 0 ? PL : (X(i - 1) + X(i)) / 2;
@@ -239,14 +265,15 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         </g>
       ))}
 
-      {/* Area fill — clipped, fades in after line draws */}
+      {/* Area fill — clipped, always visible at low opacity (no CSS animation to avoid flicker) */}
       {max > 0 && (
-        <path d={areaPath} fill={color} clipPath={`url(#${clipId})`} className="chart-area" />
+        <path d={areaPath} fill={color} clipPath={`url(#${clipId})`} opacity={0.12} />
       )}
 
-      {/* Main line — draws in from left using pathLength normalization */}
+      {/* Main line — draws in from left via rAF animation (no CSS class to avoid re-render flicker) */}
       {max > 0 && (
         <path
+          ref={linePathRef}
           d={smoothLine}
           fill="none"
           stroke={color}
@@ -255,7 +282,6 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
           strokeLinecap="round"
           clipPath={`url(#${clipId})`}
           pathLength={1000}
-          style={{ strokeDasharray: 1000, strokeDashoffset: 1000, animation: 'chart-draw .9s cubic-bezier(.4,0,.2,1) forwards' }}
         />
       )}
 
@@ -264,18 +290,16 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 4" />
       )}
 
-      {/* Dots at each data point — pop in after line */}
-      {max > 0 && series.map((p, i) => p.v > 0 ? (
+      {/* Dots at each data point — rendered normally (no CSS animation to avoid re-render flicker) */}
+      {max > 0 && clampedPts.map((cp, i) => series[i].v > 0 ? (
         <circle
           key={i}
-          cx={X(i).toFixed(1)}
-          cy={Y(p.v).toFixed(1)}
+          cx={cp.x.toFixed(1)}
+          cy={cp.y.toFixed(1)}
           r={3}
           fill={color}
           stroke="var(--surface)"
           strokeWidth={1.5}
-          className="chart-dot"
-          style={{ animationDelay: `${0.55 + i * 0.035}s` }}
         />
       ) : null)}
 
@@ -307,7 +331,7 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         const tipH = 15;
         const tipX = Math.min(Math.max(cx - tipW / 2, PL), W - tipW - 2);
         // Position tooltip clearly above the dot (or above the chart area top when dot is high)
-        const dotY = max > 0 ? Y(p.v) : H - PB;
+        const dotY = max > 0 ? clampedPts[i].y : H - PB;
         const tipY = Math.max(2, dotY - tipH - 14);
         return (
           <g key={`col-${i}`}>
@@ -328,11 +352,11 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
                 <rect x={lx.toFixed(1)} y={PT} width={Math.max(0, rx - lx).toFixed(1)} height={H - PT - PB} fill={color} fillOpacity={0.06} rx={2} />
                 {/* Vertical guide line from dot to baseline */}
                 {max > 0 && (
-                  <line x1={cx} y1={Y(p.v)} x2={cx} y2={H - PB} stroke={color} strokeWidth={1} strokeOpacity={0.3} strokeDasharray="2 2" />
+                  <line x1={cx} y1={clampedPts[i].y} x2={cx} y2={H - PB} stroke={color} strokeWidth={1} strokeOpacity={0.3} strokeDasharray="2 2" />
                 )}
                 {/* Active dot (larger, no inner ring) */}
                 {max > 0 && (
-                  <circle cx={cx} cy={Y(p.v)} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
+                  <circle cx={cx} cy={clampedPts[i].y} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
                 )}
                 {/* Tooltip pill */}
                 <rect x={tipX} y={tipY} width={tipW} height={tipH} rx={4.5} fill={color} fillOpacity={0.92} />

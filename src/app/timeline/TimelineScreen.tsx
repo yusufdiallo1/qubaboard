@@ -105,32 +105,20 @@ function TimelineNav({ onPrev, onNext, onToday, rangeLabel }: TimelineNavProps) 
 
   return (
     <>
+      {/* Single floating pill: ‹ Today › */}
       <div className="tl-nav">
-        <button
-          className="tl-navbtn"
-          onClick={onPrev}
-          aria-label="Previous"
-        >
-          {/* Chevron Left (flipped for RTL via CSS dir inheritance) */}
+        <button className="tl-navbtn" onClick={onPrev} aria-label="Previous">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            {isRtl
-              ? <polyline points="8 5 13 10 8 15" />
-              : <polyline points="12 5 7 10 12 15" />}
+            {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
           </svg>
         </button>
-        <button
-          className="tl-navbtn"
-          onClick={onNext}
-          aria-label="Next"
-        >
+        <div className="tl-nav-div" aria-hidden="true" />
+        <button className="tl-todaybtn" onClick={onToday}>{t.today}</button>
+        <div className="tl-nav-div" aria-hidden="true" />
+        <button className="tl-navbtn" onClick={onNext} aria-label="Next">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            {isRtl
-              ? <polyline points="12 5 7 10 12 15" />
-              : <polyline points="8 5 13 10 8 15" />}
+            {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
           </svg>
-        </button>
-        <button className="tl-todaybtn" onClick={onToday}>
-          {t.today}
         </button>
       </div>
       <span className="tl-range">{rangeLabel}</span>
