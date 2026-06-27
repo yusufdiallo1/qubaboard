@@ -279,42 +279,32 @@ function TimelineView() {
         {t.tlHint}
       </p>
 
-      {/* Scrollable timeline grid — wrapper is relative so the pill can float over it */}
+      {/* Scrollable timeline grid */}
       <div className="tl-wrap">
-        {/* Floating nav pill — overlaid on the date header strip, outside the scroll */}
-        <div className="tl-floatpill">
-          <button
-            className="tl-floatbtn"
-            onClick={handlePrev}
-            aria-label={lang === "ar" ? "السابق" : "Previous"}
-          >
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
-            </svg>
-          </button>
-          <div className="tl-floatdiv" />
-          <button
-            className="tl-floatbtn tl-floatbtn--today"
-            onClick={handleToday}
-            aria-label={lang === "ar" ? "اليوم" : "Today"}
-          >
-            {t.today}
-          </button>
-          <div className="tl-floatdiv" />
-          <button
-            className="tl-floatbtn"
-            onClick={handleNext}
-            aria-label={lang === "ar" ? "التالي" : "Next"}
-          >
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
-            </svg>
-          </button>
-        </div>
+        {/* ‹ prev — glass arrow overlaid on the left edge of the header */}
+        <button
+          className="tl-arrow tl-arrow--prev"
+          onClick={handlePrev}
+          aria-label={lang === "ar" ? "السابق" : "Previous"}
+        >
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
+          </svg>
+        </button>
+        {/* › next — glass arrow overlaid on the right edge of the header */}
+        <button
+          className="tl-arrow tl-arrow--next"
+          onClick={handleNext}
+          aria-label={lang === "ar" ? "التالي" : "Next"}
+        >
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
+          </svg>
+        </button>
 
         <div className="tl-scroll">
         <div className="tl">
-          {/* Header row */}
+          {/* Header row: [Rm corner] [date cols...] */}
           <div className="tl-headrow">
             <div className="tl-corner">
               <span className="tl-corner-label">{lang === "ar" ? "غرفة" : "Rm"}</span>

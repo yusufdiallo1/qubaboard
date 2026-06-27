@@ -347,49 +347,50 @@ input,select{font-family:inherit}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
-/* Timeline wrap — relative so floating pill can position over it */
+/* Timeline wrap — relative so the edge arrow pills can sit over the header */
 .tl-wrap{position:relative}
 
-/* Floating glass nav pill — sits centered over the date header strip */
-.tl-floatpill{
+/* Glass arrow pills — pinned to the left/right edges of the header row */
+.tl-arrow{
   position:absolute;
-  top:8px;
-  left:50%;
-  transform:translateX(-50%);
+  top:0;
   z-index:10;
   display:flex;
   align-items:center;
-  gap:0;
-  background:color-mix(in srgb,var(--surface) 72%,transparent);
-  backdrop-filter:blur(18px) saturate(160%);
-  -webkit-backdrop-filter:blur(18px) saturate(160%);
-  border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));
-  border-radius:99px;
-  padding:3px 3px;
-  box-shadow:0 4px 20px rgba(0,0,0,.18),0 0 0 1px rgba(255,255,255,.06) inset;
-  pointer-events:all;
-}
-[data-theme="dark"] .tl-floatpill{
-  background:color-mix(in srgb,var(--surface-2) 80%,transparent);
-  border-color:color-mix(in srgb,var(--gold) 35%,var(--line));
-  box-shadow:0 4px 24px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08) inset;
-}
-.tl-floatbtn{
-  display:flex;align-items:center;justify-content:center;
-  min-width:34px;height:34px;padding:0 10px;
-  border-radius:99px;border:none;
-  background:transparent;
-  color:var(--text);
+  justify-content:center;
+  width:36px;
+  /* height matches .tl-headrow — set via JS or just use 100% of first child */
+  height:58px;
+  border:none;
   cursor:pointer;
-  font-size:13px;font-weight:700;
-  transition:background var(--dur-xs),transform var(--dur-xs),color var(--dur-xs);
-  flex:none;
+  background:color-mix(in srgb,var(--surface-2) 88%,transparent);
+  backdrop-filter:blur(16px) saturate(160%);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  transition:background var(--dur-xs),transform var(--dur-xs);
+  color:var(--text-2);
 }
-.tl-floatbtn svg{width:16px;height:16px;display:block}
-.tl-floatbtn:hover{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold-deep)}
-.tl-floatbtn:active{transform:scale(.85)}
-.tl-floatbtn--today{color:var(--gold-deep);font-weight:800;min-width:52px}
-.tl-floatdiv{width:1px;height:18px;background:color-mix(in srgb,var(--gold) 30%,var(--line));flex:none;margin:0 1px}
+.tl-arrow svg{width:18px;height:18px;display:block}
+.tl-arrow:hover{background:color-mix(in srgb,var(--gold) 16%,var(--surface-2));color:var(--gold-deep)}
+.tl-arrow:active{transform:scaleX(.88)}
+/* left arrow — sits at the left edge of the scroll container, after the corner */
+.tl-arrow--prev{
+  left:56px; /* width of .tl-corner */
+  border-radius:0 8px 8px 0;
+  border-inline-end:1px solid color-mix(in srgb,var(--gold) 25%,var(--line));
+  box-shadow:4px 0 14px rgba(0,0,0,.18);
+}
+/* right arrow — sits at the right edge of the visible scroll container */
+.tl-arrow--next{
+  right:0;
+  border-radius:8px 0 0 8px;
+  border-inline-start:1px solid color-mix(in srgb,var(--gold) 25%,var(--line));
+  box-shadow:-4px 0 14px rgba(0,0,0,.18);
+}
+[data-theme="dark"] .tl-arrow{
+  background:color-mix(in srgb,var(--navy) 90%,transparent);
+  color:var(--faint);
+}
+[data-theme="dark"] .tl-arrow:hover{background:color-mix(in srgb,var(--gold) 18%,var(--navy));color:var(--gold)}
 
 .tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
 .tl{min-width:780px}
