@@ -310,33 +310,39 @@ input,select{font-family:inherit}
 
 .tl-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .tl-range{font-size:16px;font-weight:800;letter-spacing:-.01em;min-width:140px}
-/* Floating pill: prev · Today · next all in one capsule */
+/* ── Floating pill: ‹ | Today | › in one capsule ── */
 .tl-nav{
   display:inline-flex;align-items:center;
-  background:var(--glass-bg);
-  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  background:var(--surface);
   border:1px solid var(--line);
   border-radius:980px;
-  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.18);
+  box-shadow:var(--shadow-lift);
   overflow:hidden;
+  flex:none;
+}
+[data-theme="dark"] .tl-nav{
+  background:var(--surface-2);
+  box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
 }
 .tl-navbtn{
-  width:40px;height:40px;display:grid;place-items:center;
+  width:42px;height:42px;display:grid;place-items:center;
   color:var(--text);transition:background .14s,transform .1s;
-  border-radius:0;background:none;
+  border-radius:0;background:none;flex:none;
 }
-.tl-navbtn:hover{background:var(--surface-2)}
-.tl-navbtn:active{transform:scale(.88)}
+.tl-navbtn:hover{background:color-mix(in srgb,var(--gold) 10%,var(--surface-2))}
+.tl-navbtn:active{transform:scale(.85)}
 .tl-navbtn svg{width:17px;height:17px}
-/* divider between arrows and Today */
-.tl-nav-div{width:1px;height:22px;background:var(--line);flex:none}
+/* thin dividers between arrow and Today label */
+.tl-nav-div{width:1px;height:20px;background:var(--line);flex:none}
 .tl-todaybtn{
-  padding:0 16px;height:40px;
-  font-size:13.5px;font-weight:700;color:var(--gold-deep);
+  padding:0 18px;height:42px;
+  font-size:13.5px;font-weight:800;
+  color:var(--gold);
   background:none;border:none;
-  transition:background .14s,color .14s;
+  letter-spacing:.01em;
+  transition:background .14s;
 }
-.tl-todaybtn:hover{background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--gold)}
+.tl-todaybtn:hover{background:color-mix(in srgb,var(--gold) 10%,transparent)}
 .tl-todaybtn:active{transform:scale(.96)}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
