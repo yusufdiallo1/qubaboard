@@ -284,14 +284,15 @@ export default function AppShell() {
 
         <div className="tb-spacer" />
 
-        {/* Date pill */}
-        <div className="datepill">
+        {/* Date pill — suppressHydrationWarning because localToday() differs server/client timezone */}
+        <div className="datepill" suppressHydrationWarning>
           <span style={{ color: 'var(--gold-deep)', display: 'grid', placeItems: 'center', width: 15, height: 15 }}>
             {I.calendar}
           </span>
-          {fmtDateLong(today, S.lang)}
+          <span suppressHydrationWarning>{fmtDateLong(today, S.lang)}</span>
           {/* Realtime connection status dot */}
           <span
+            suppressHydrationWarning
             title={S.realtimeStatus === 'ok' ? 'Live' : S.realtimeStatus === 'error' ? 'Disconnected' : 'Connecting…'}
             style={{
               width: 7,

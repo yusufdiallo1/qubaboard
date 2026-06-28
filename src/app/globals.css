@@ -287,15 +287,12 @@ input,select{font-family:inherit}
 .range-btn.on{background:var(--gold);color:#1b1407}
 [data-theme="dark"] .range-btn.on{background:var(--gold);color:#1b1407}
 
-/* ── Occupancy filter row (above KPI cards) ── */
+/* ── Occupancy filter row + dropdown (above KPI cards) ── */
 .occ-rate-card{grid-column:span 1}
 .occ-filter-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .occ-filter-label{font-size:12px;font-weight:700;color:var(--dim);white-space:nowrap}
-.occ-chips{display:flex;gap:6px;flex-wrap:wrap}
-.occ-chip{background:var(--surface-2);border:none;border-radius:99px;padding:5px 13px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
-.occ-chip:hover{color:var(--text)}
-.occ-chip.on{background:var(--gold-deep);color:#fff}
-[data-theme="dark"] .occ-chip.on{background:var(--gold);color:#1b1407}
+.occ-select{appearance:none;-webkit-appearance:none;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:6px 28px 6px 12px;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;min-width:130px}
+.occ-select:hover,.occ-select:focus{border-color:var(--gold)}
 .wpanel{margin-top:14px}
 .wchart{display:flex;align-items:flex-end;gap:12px;height:160px;padding-top:10px}
 .wbar{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}

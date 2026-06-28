@@ -762,20 +762,19 @@ export default function OverviewScreen() {
         </div>
       )}
 
-      {/* ── Occupancy filter row — ABOVE the cards ── */}
+      {/* ── Occupancy filter dropdown — ABOVE the cards ── */}
       <div className="occ-filter-row">
         <span className="occ-filter-label">{lang === 'ar' ? 'نسبة الإشغال:' : 'Occupancy rate:'}</span>
-        <div className="occ-chips">
+        <select
+          value={occFilter}
+          onChange={e => setOccFilter(e.target.value as OccFilter)}
+          className="occ-select"
+          dir="ltr"
+        >
           {OCC_FILTERS.map(f => (
-            <button
-              key={f.key}
-              className={`occ-chip${occFilter === f.key ? ' on' : ''}`}
-              onClick={() => setOccFilter(f.key)}
-            >
-              {lang === 'ar' ? f.ar : f.en}
-            </button>
+            <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* ── KPI cards ── */}
