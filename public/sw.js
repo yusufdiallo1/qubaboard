@@ -1,4 +1,4 @@
-const CACHE = 'quba-v3';
+const CACHE = 'quba-v4';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(self.skipWaiting());
