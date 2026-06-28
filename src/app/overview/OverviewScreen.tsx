@@ -285,23 +285,23 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         />
       )}
 
-      {/* Zero baseline dashed when no data */}
+      {/* Zero baseline — dashed when all zero */}
       {max === 0 && (
-        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 4" />
+        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke={color} strokeWidth={1.5} strokeOpacity={0.25} strokeDasharray="4 5" />
       )}
 
-      {/* Dots at each data point — rendered normally (no CSS animation to avoid re-render flicker) */}
-      {max > 0 && clampedPts.map((cp, i) => series[i].v > 0 ? (
+      {/* Dots at every data point */}
+      {clampedPts.map((cp, i) => (
         <circle
           key={i}
           cx={cp.x.toFixed(1)}
           cy={cp.y.toFixed(1)}
-          r={3}
+          r={3.5}
           fill={color}
           stroke="var(--surface)"
           strokeWidth={1.5}
         />
-      ) : null)}
+      ))}
 
       {/* Day axis labels */}
       {series.map((p, i) =>
@@ -559,7 +559,7 @@ function StatCard({ label, value, rawValue, suffix, prefix, sub, icon, color, ba
     : value;
 
   return (
-    <div className="stat" data-perf={perf !== 'none' ? perf : undefined}>
+    <div className="stat">
       <div className="sl">
         <span className="si" style={{ '--c': color } as React.CSSProperties}>
           {icon}
