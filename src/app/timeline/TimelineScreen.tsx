@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useAppState, useAppDispatch } from "@/lib/store";
 import {
   localToday,
@@ -136,22 +136,6 @@ function TimelineView() {
   const t = T[lang];
   const isRtl = lang === "ar";
 
-  // Refs for scroll-sync between pill date strip and room grid
-  const pillScrollRef = useRef<HTMLDivElement>(null);
-  const gridScrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const pill = pillScrollRef.current;
-    const grid = gridScrollRef.current;
-    if (!pill || !grid) return;
-    let syncing = false;
-    const onPillScroll = () => { if (syncing) return; syncing = true; grid.scrollLeft = pill.scrollLeft; syncing = false; };
-    const onGridScroll = () => { if (syncing) return; syncing = true; pill.scrollLeft = grid.scrollLeft; syncing = false; };
-    pill.addEventListener("scroll", onPillScroll, { passive: true });
-    grid.addEventListener("scroll", onGridScroll, { passive: true });
-    return () => { pill.removeEventListener("scroll", onPillScroll); grid.removeEventListener("scroll", onGridScroll); };
-  }, []);
-
   const today = localToday();
 
   // The first day shown in the strip = today + tlStart offset
@@ -271,10 +255,23 @@ function TimelineView() {
 
   return (
     <div>
-      {/* Top toolbar: view toggle · Today · legend */}
+      {/* Toolbar: [CalViewToggle] [< >] [Today] [range] ··· [legend] */}
       <div className="tl-top">
         <CalViewToggle />
-        <button className="tl-today-btn" onClick={handleToday}>{t.today}</button>
+        <div className="tl-nav">
+          <button className="tl-navbtn" onClick={handlePrev} aria-label={lang === "ar" ? "السابق" : "Previous"}>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
+            </svg>
+          </button>
+          <button className="tl-navbtn" onClick={handleNext} aria-label={lang === "ar" ? "التالي" : "Next"}>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
+            </svg>
+          </button>
+        </div>
+        <button className="tl-todaybtn" onClick={handleToday}>{t.today}</button>
+        <span className="tl-range">{rangeLabel}</span>
         <div className="tl-legend">
           {legendItems.map((li) => (
             <span key={li.key} className="li" style={{ "--c": li.color } as React.CSSProperties}>
@@ -295,70 +292,48 @@ function TimelineView() {
         {t.tlHint}
       </p>
 
-      {/* ── Floating glass pill: [<] [date strip] [>] ── */}
-      <div className="tl-pill">
-        {/* ‹ prev */}
-        <button className="tl-pill-btn" onClick={handlePrev} aria-label={lang === "ar" ? "السابق" : "Previous"}>
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
-          </svg>
-        </button>
-        <div className="tl-pill-div" />
-        {/* 56px spacer aligns dates with the grid's room-label column */}
-        <div className="tl-pill-spacer" />
-        {/* Scrollable date strip — synced to grid below */}
-        <div className="tl-pill-dates" ref={pillScrollRef}>
-          {days.map((day, idx) => {
-            const parts = parseParts(day);
-            const isToday = day === today;
-            const prevDay = idx > 0 ? days[idx - 1] : null;
-            const isMonthStart = prevDay ? parseParts(prevDay).m !== parts.m : true;
-            const wdLabel = t.wmin[weekdayOf(day)];
-            const monLabel = isMonthStart ? t.months[parts.m - 1].slice(0, 3) : "";
-            let cls = "tl-day";
-            if (isToday) cls += " today";
-            if (isMonthStart && idx > 0) cls += " mstart";
-            return (
-              <div key={day} className={cls}>
-                <div className="mon">{monLabel}</div>
-                <div className="wd">{wdLabel}</div>
-                <div className="dn">{parts.d}</div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="tl-pill-div" />
-        {/* › next */}
-        <button className="tl-pill-btn" onClick={handleNext} aria-label={lang === "ar" ? "التالي" : "Next"}>
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
-          </svg>
-        </button>
-      </div>
-
-      {/* Room grid — no header row, just room rows; scrolls in sync with pill */}
-      <div className="tl-scroll" ref={gridScrollRef}>
+      {/* Scrollable grid — header row built into scroll container */}
+      <div className="tl-scroll">
         <div className="tl">
+          {/* Date header row */}
+          <div className="tl-headrow">
+            <div className="tl-corner">{t.roomShort ?? (lang === "ar" ? "غ" : "Rm")}</div>
+            <div className="tl-days">
+              {days.map((day, idx) => {
+                const parts = parseParts(day);
+                const isToday = day === today;
+                const prevDay = idx > 0 ? days[idx - 1] : null;
+                const isMonthStart = prevDay ? parseParts(prevDay).m !== parts.m : true;
+                const wdLabel = t.wmin[weekdayOf(day)];
+                const monLabel = isMonthStart ? t.months[parts.m - 1].slice(0, 3) : "";
+                let cls = "tl-day";
+                if (isToday) cls += " today";
+                if (isMonthStart && idx > 0) cls += " mstart";
+                return (
+                  <div key={day} className={cls}>
+                    <div className="mon">{monLabel}</div>
+                    <div className="wd">{wdLabel}</div>
+                    <div className="dn">{parts.d}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Room rows */}
           {roomNos.map((roomNo) => {
             const visibleBookings = getVisibleBookings(roomNo);
-
             return (
               <div key={roomNo} className="tl-row">
-                {/* Room label */}
                 <div className="tl-room">
                   <i>{lang === "ar" ? "غ" : "Rm"}</i>
                   <b>{roomNo}</b>
                 </div>
-
-                {/* Cells + bars */}
                 <div className="tl-cells">
-                  {/* Empty tappable cells */}
                   {days.map((day) => {
                     const isToday = day === today;
                     let cellCls = "tl-cell";
                     if (isToday) cellCls += " today";
-
                     return (
                       <div
                         key={day}
@@ -367,25 +342,16 @@ function TimelineView() {
                         role="button"
                         aria-label={`New booking room ${roomNo} on ${day}`}
                         tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            handleCellClick(roomNo, day);
-                          }
-                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleCellClick(roomNo, day); }}
                       />
                     );
                   })}
-
-                  {/* Booking bars overlaid absolutely */}
                   {visibleBookings.map((b) => (
                     <button
                       key={b.id}
                       className={barClass(b)}
                       style={barStyle(b)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBarClick(roomNo, b.id);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleBarClick(roomNo, b.id); }}
                       title={b.guest_name}
                       aria-label={`Booking: ${b.guest_name}`}
                     >
@@ -396,8 +362,8 @@ function TimelineView() {
               </div>
             );
           })}
-        </div>{/* /tl */}
-      </div>{/* /tl-scroll */}
+        </div>
+      </div>
     </div>
   );
 }
