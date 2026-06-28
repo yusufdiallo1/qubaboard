@@ -280,6 +280,12 @@ input,select{font-family:inherit}
 .bk-row .bt{flex:1;height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
 .bk-row .bt i{display:block;height:100%;border-radius:99px;background:var(--c);transition:width .5s}
 .bk-row .bv{font-size:14px;font-weight:800;min-width:22px;text-align:end}
+/* ── Range switcher ── */
+.range-sw{display:inline-flex;background:var(--surface-2);border-radius:99px;padding:3px;gap:2px;flex:none}
+.range-btn{background:none;border:none;padding:5px 14px;border-radius:99px;font-size:13px;font-weight:700;color:var(--dim);cursor:pointer;transition:background .18s,color .18s}
+.range-btn:hover{color:var(--text)}
+.range-btn.on{background:var(--gold);color:#1b1407}
+[data-theme="dark"] .range-btn.on{background:var(--gold);color:#1b1407}
 .wpanel{margin-top:14px}
 .wchart{display:flex;align-items:flex-end;gap:12px;height:160px;padding-top:10px}
 .wbar{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
