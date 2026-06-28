@@ -9,7 +9,8 @@
  * All icons are verbatim from the prototype's const I.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
 import { localToday, fmtDateLong } from '@/lib/helpers';
@@ -114,6 +115,29 @@ type NavDef = {
   icon: React.ReactNode;
   adminOnly?: boolean;
 };
+
+// Catches render errors in any screen so the shell stays alive
+class ScreenErrorBoundary extends Component<{ children: ReactNode; page: string }, { err: string | null }> {
+  constructor(props: { children: ReactNode; page: string }) {
+    super(props);
+    this.state = { err: null };
+  }
+  static getDerivedStateFromError(e: Error) { return { err: e.message }; }
+  componentDidUpdate(prev: { page: string }) {
+    if (prev.page !== this.props.page && this.state.err) this.setState({ err: null });
+  }
+  render() {
+    if (this.state.err) {
+      return (
+        <div style={{ padding: 32, color: 'var(--text)' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Something went wrong</div>
+          <pre style={{ fontSize: 11, color: 'var(--faint)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.err}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const NAV_ITEMS: NavDef[] = [
   { id: 'board',     labelKey: 'nav_board',     icon: I.board },
@@ -387,7 +411,9 @@ export default function AppShell() {
 
         {/* Page content */}
         <main className="content animate-fade-in-up" key={S.page}>
-          {renderScreen()}
+          <ScreenErrorBoundary page={S.page}>
+            {renderScreen()}
+          </ScreenErrorBoundary>
         </main>
       </div>
 

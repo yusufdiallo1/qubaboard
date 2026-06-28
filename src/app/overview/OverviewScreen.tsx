@@ -604,28 +604,31 @@ export default function OverviewScreen() {
   const occPct = Math.round((inHouse / totalRooms) * 100);
 
   // Occupancy filter: compute avg occupancy for the selected window
-  const filteredOccPct = useMemo(() => {
-    if (occFilter === 'current') return occPct;
-    if (occFilter === 'alltime') {
-      if (bookings.length === 0) return 0;
-      const earliest = bookings.reduce((m, b) => b.check_in < m ? b.check_in : m, today);
-      const totalDays = Math.min(Math.max(0, diffDays(earliest, today)), 1095);
-      if (totalDays === 0) return occPct;
-      const days = Array.from({ length: totalDays }, (_, i) => isoAdd(earliest, i));
-      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / days.length;
-      return Math.round((avg / totalRooms) * 100);
-    }
-    if (occFilter === 'last7') {
-      const days = Array.from({ length: 7 }, (_, i) => isoAdd(today, -(6 - i)));
-      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / 7;
-      return Math.round((avg / totalRooms) * 100);
-    }
-    if (occFilter === 'lastmonth') {
-      const days = Array.from({ length: 30 }, (_, i) => isoAdd(today, -(29 - i)));
-      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / 30;
-      return Math.round((avg / totalRooms) * 100);
-    }
-    return occPct;
+  const filteredOccPct = useMemo((): number => {
+    try {
+      if (occFilter === 'current') return occPct;
+      const safe = (avg: number, n: number) => n > 0 ? Math.round((avg / n / totalRooms) * 100) : 0;
+      if (occFilter === 'alltime') {
+        if (bookings.length === 0) return 0;
+        const earliest = bookings.reduce((m, b) => b.check_in < m ? b.check_in : m, today);
+        const n = Math.min(Math.max(0, diffDays(earliest, today)), 1095);
+        if (n === 0) return occPct;
+        let sum = 0;
+        for (let i = 0; i < n; i++) sum += occOnDate(bookings, isoAdd(earliest, i));
+        return safe(sum, n);
+      }
+      if (occFilter === 'last7') {
+        let sum = 0;
+        for (let i = 6; i >= 0; i--) sum += occOnDate(bookings, isoAdd(today, -i));
+        return safe(sum, 7);
+      }
+      if (occFilter === 'lastmonth') {
+        let sum = 0;
+        for (let i = 29; i >= 0; i--) sum += occOnDate(bookings, isoAdd(today, -i));
+        return safe(sum, 30);
+      }
+      return occPct;
+    } catch { return occPct; }
   }, [occFilter, occPct, bookings, today, totalRooms]);
 
   const rev = useMemo(() =>
