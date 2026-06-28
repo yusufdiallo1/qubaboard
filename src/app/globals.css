@@ -347,14 +347,32 @@ input,select{font-family:inherit}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
+/* Timeline scroll container — no top border, the pill headrow provides the visual top */
 .tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
 .tl{min-width:780px}
-.tl-headrow{display:flex;border-bottom:1px solid var(--line);background:var(--surface-2)}
-.tl-corner{width:56px;flex:none;border-inline-end:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint)}
+
+/* Floating glass pill — the date header row */
+.tl-headrow{
+  display:flex;
+  margin:8px 8px 4px;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--surface-2) 70%,transparent);
+  backdrop-filter:blur(18px) saturate(170%);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+  border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));
+  box-shadow:0 4px 20px rgba(0,0,0,.13), 0 0 0 1px rgba(255,255,255,.05) inset;
+  overflow:hidden;
+}
+[data-theme="dark"] .tl-headrow{
+  background:color-mix(in srgb,var(--navy) 80%,transparent);
+  border-color:color-mix(in srgb,var(--gold) 30%,rgba(255,255,255,.07));
+  box-shadow:0 4px 24px rgba(0,0,0,.40), 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+.tl-corner{width:56px;flex:none;border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line));display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint)}
 .tl-days{display:grid;grid-auto-flow:column;grid-auto-columns:60px}
 .tl-day{padding:9px 2px 8px;text-align:center;border-inline-start:1px solid var(--line-soft)}
 .tl-day:first-child{border-inline-start:none}
-.tl-day.today{background:color-mix(in srgb,var(--gold) 22%, transparent);border-bottom:2px solid var(--gold)}
+.tl-day.today{background:color-mix(in srgb,var(--gold) 20%,transparent);border-bottom:2px solid var(--gold)}
 .tl-day .wd{font-size:9.5px;color:var(--faint);font-weight:700;letter-spacing:.02em}
 .tl-day.today .wd{color:var(--gold-deep)}
 .tl-day .dn{font-size:14px;font-weight:800;line-height:1.2;margin-top:1px}
