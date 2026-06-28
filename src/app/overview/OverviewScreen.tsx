@@ -537,26 +537,29 @@ function RatePanel({ lang, currentRate, rateSaved, onSave }: RatePanelProps) {
 // Stat Card
 // ─────────────────────────────────────────────────────────────────────────────
 
+type PerfLevel = 'good' | 'mod' | 'bad' | 'none';
+
 interface StatCardProps {
   label: string;
   value: string;
-  rawValue?: number;       // if provided, count-up animation is applied
-  suffix?: string;         // appended after the count-up number
-  prefix?: string;         // prepended before the count-up number
+  rawValue?: number;
+  suffix?: string;
+  prefix?: string;
   sub: string | null;
   icon: React.ReactNode;
   color: string;
-  bar: number | null;  // percentage 0–100, or null to hide
+  bar: number | null;
+  perf?: PerfLevel;
 }
 
-function StatCard({ label, value, rawValue, suffix, prefix, sub, icon, color, bar }: StatCardProps) {
+function StatCard({ label, value, rawValue, suffix, prefix, sub, icon, color, bar, perf = 'none' }: StatCardProps) {
   const animated = useCountUp(rawValue ?? 0, 800);
   const displayValue = rawValue !== undefined
     ? `${prefix ?? ''}${animated.toLocaleString()}${suffix ?? ''}`
     : value;
 
   return (
-    <div className="stat stagger">
+    <div className="stat" data-perf={perf !== 'none' ? perf : undefined}>
       <div className="sl">
         <span className="si" style={{ '--c': color } as React.CSSProperties}>
           {icon}
@@ -745,6 +748,27 @@ export default function OverviewScreen() {
     setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
   }, [settings, lang, dispatch]);
 
+  // ── Performance level helpers ─────────────────────────────────────────────
+  function occPerf(pct: number): PerfLevel {
+    if (pct >= 70) return 'good';
+    if (pct >= 40) return 'mod';
+    return 'bad';
+  }
+  function revPerf(amount: number): PerfLevel {
+    const rate = settings?.daily_rate || 500;
+    const maxPossible = totalRooms * rate;
+    const ratio = maxPossible > 0 ? (amount / maxPossible) * 100 : 0;
+    if (ratio >= 50) return 'good';
+    if (ratio >= 20) return 'mod';
+    return 'bad';
+  }
+  function adrPerf(amount: number): PerfLevel {
+    const rate = settings?.daily_rate || 500;
+    if (amount >= rate * 0.9) return 'good';
+    if (amount >= rate * 0.5) return 'mod';
+    return 'bad';
+  }
+
   // ── Scroll-reveal ──────────────────────────────────────────────────────────
   const pageRef = useReveal();
 
@@ -790,7 +814,7 @@ export default function OverviewScreen() {
       )}
 
       {/* KPI cards */}
-      <div className="stats stagger-group">
+      <div className="stats stats-animate">
         <StatCard
           label={tl.occRate}
           value={`${occPct}%`}
@@ -800,6 +824,7 @@ export default function OverviewScreen() {
           icon={Icons.gauge}
           color="var(--gold-deep)"
           bar={occPct}
+          perf={occPerf(occPct)}
         />
         <StatCard
           label={tl.occupiedRooms}
@@ -810,6 +835,7 @@ export default function OverviewScreen() {
           icon={Icons.bed}
           color="var(--booked)"
           bar={null}
+          perf={occPerf(occPct)}
         />
         <StatCard
           label={tl.arrivals}
@@ -838,6 +864,7 @@ export default function OverviewScreen() {
           icon={Icons.money}
           color="var(--free)"
           bar={null}
+          perf={revPerf(rev)}
         />
         <StatCard
           label={tl.adr}
@@ -848,6 +875,7 @@ export default function OverviewScreen() {
           icon={Icons.chart}
           color="var(--cleaning)"
           bar={null}
+          perf={adrPerf(adr)}
         />
         <StatCard
           label={tl.revpar}
@@ -858,6 +886,7 @@ export default function OverviewScreen() {
           icon={Icons.gauge}
           color="var(--info)"
           bar={null}
+          perf={revPerf(revpar)}
         />
         <StatCard
           label={tl.avgStay}

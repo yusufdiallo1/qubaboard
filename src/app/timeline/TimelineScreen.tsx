@@ -241,13 +241,15 @@ function TimelineView() {
               {lang === "ar" ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
             </svg>
           </button>
+          <div className="tl-nav-div" aria-hidden="true" />
+          <button className="tl-todaybtn" onClick={handleToday}>{t.today}</button>
+          <div className="tl-nav-div" aria-hidden="true" />
           <button className="tl-navbtn" onClick={handleNext} aria-label={lang === "ar" ? "التالي" : "Next"}>
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {lang === "ar" ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
             </svg>
           </button>
         </div>
-        <button className="tl-todaybtn" onClick={handleToday}>{t.today}</button>
         <span className="tl-range">{rangeLabel}</span>
         <div className="tl-legend">
           {legendItems.map((li) => (
@@ -279,10 +281,12 @@ function TimelineView() {
             const isToday = iso === today;
             const wdIdx = weekdayOf(iso);
             const wdLabel = t.wdays[wdIdx];
+            const monLabel = t.months[viewM - 1].slice(0, 3);
             let cls = "tl-day";
             if (isToday) cls += " today";
             return (
               <div key={d} className={cls}>
+                <div className="mon">{monLabel}</div>
                 <div className="wd">{wdLabel}</div>
                 <div className="dn">{d}</div>
               </div>
