@@ -130,8 +130,6 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<SVGGElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
-  const hasAnimRef = useRef(false);
-  const lineRef = useRef<SVGPolylineElement>(null);
   const activeIdxRef = useRef<number>(-1);
 
   const W = 560; const H = 160; const PT = 16; const PB = 22; const PL = 36; const PR = 6;
@@ -161,25 +159,6 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
   const hitLeft  = (i: number) => i === 0 ? PL : (X(i - 1) + X(i)) / 2;
   const hitRight = (i: number) => i === n - 1 ? W : (X(i) + X(i + 1)) / 2;
 
-  // Draw-in animation once on mount
-  useEffect(() => {
-    if (hasAnimRef.current || max === 0 || !lineRef.current) return;
-    hasAnimRef.current = true;
-    const el = lineRef.current;
-    const len = 2000;
-    el.style.strokeDasharray = String(len);
-    el.style.strokeDashoffset = String(len);
-    const start = performance.now();
-    const dur = 900;
-    function step(now: number) {
-      const p = Math.min((now - start) / dur, 1);
-      const e = 1 - Math.pow(1 - p, 3);
-      el.style.strokeDashoffset = String(len - e * len);
-      if (p < 1) requestAnimationFrame(step);
-      else el.style.strokeDashoffset = '0';
-    }
-    requestAnimationFrame(step);
-  }, [max]);
 
   // Hover: SVG overlay for crosshair/highlight, HTML div for cursor-following tooltip
   const showOverlay = useCallback((i: number, clientX: number, clientY: number) => {
@@ -224,7 +203,7 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
   }, []);
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
       {/* Cursor-following tooltip div — outside SVG so it follows real mouse coords */}
       <div ref={tipRef} style={{
         display: 'none', position: 'fixed', zIndex: 400, pointerEvents: 'none',
@@ -260,7 +239,7 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
 
         {/* Line */}
         {max > 0 && (
-          <polyline ref={lineRef}
+          <polyline
             points={polyPts} fill="none" stroke={color} strokeWidth={2.2}
             strokeLinejoin="round" strokeLinecap="round" />
         )}
@@ -531,10 +510,10 @@ const Icons = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const OCC_FILTERS: { key: OccFilter; ar: string; en: string }[] = [
-  { key: 'alltime',   ar: 'كل الوقت', en: 'All time' },
   { key: 'current',   ar: 'الآن',     en: 'Current'  },
-  { key: 'last7',     ar: '7 أيام',   en: 'Last 7d'  },
-  { key: 'lastmonth', ar: 'شهر',      en: 'Last 30d' },
+  { key: 'last7',     ar: 'آخر 7 أيام', en: 'Last 7 days' },
+  { key: 'lastmonth', ar: 'آخر 30 يوم', en: 'Last 30 days' },
+  { key: 'alltime',   ar: 'كل الوقت', en: 'All time' },
 ];
 
 function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }: {
@@ -549,9 +528,22 @@ function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }:
 
   return (
     <div className="stat occ-rate-card">
-      <div className="sl">
-        <span className="si" style={{ '--c': 'var(--gold-deep)' } as React.CSSProperties}>{Icons.gauge}</span>
-        {tl.occRate}
+      <div className="sl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="si" style={{ '--c': 'var(--gold-deep)' } as React.CSSProperties}>{Icons.gauge}</span>
+          {tl.occRate}
+        </span>
+        {/* Dropdown filter */}
+        <select
+          value={filter}
+          onChange={e => onFilter(e.target.value as OccFilter)}
+          className="occ-select"
+          dir="ltr"
+        >
+          {OCC_FILTERS.map(f => (
+            <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
+          ))}
+        </select>
       </div>
       <div className="sv">{animated}%</div>
       {filter !== 'current' && (
@@ -564,18 +556,6 @@ function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }:
       )}
       <div className="sbar">
         <i style={{ width: `${occPct}%`, background: 'var(--gold-deep)', display: 'block', height: '100%', borderRadius: 99, transition: 'width .6s' }} />
-      </div>
-      {/* Filter chips */}
-      <div className="occ-chips">
-        {OCC_FILTERS.map(f => (
-          <button
-            key={f.key}
-            className={`occ-chip${filter === f.key ? ' on' : ''}`}
-            onClick={() => onFilter(f.key)}
-          >
-            {lang === 'ar' ? f.ar : f.en}
-          </button>
-        ))}
       </div>
     </div>
   );
@@ -628,15 +608,10 @@ export default function OverviewScreen() {
     if (occFilter === 'current') return occPct;
     if (occFilter === 'alltime') {
       if (bookings.length === 0) return 0;
-      // Average daily occ across all booking dates (check_in to check_out)
       const earliest = bookings.reduce((m, b) => b.check_in < m ? b.check_in : m, today);
-      const days: string[] = [];
-      for (let i = 0; ; i++) {
-        const d = isoAdd(earliest, i);
-        if (d > today) break;
-        days.push(d);
-      }
-      if (days.length === 0) return 0;
+      const totalDays = Math.min(Math.max(0, diffDays(earliest, today)), 1095);
+      if (totalDays === 0) return occPct;
+      const days = Array.from({ length: totalDays }, (_, i) => isoAdd(earliest, i));
       const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / days.length;
       return Math.round((avg / totalRooms) * 100);
     }
