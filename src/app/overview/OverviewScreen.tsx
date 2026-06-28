@@ -516,11 +516,9 @@ const OCC_FILTERS: { key: OccFilter; ar: string; en: string }[] = [
   { key: 'alltime',   ar: 'كل الوقت', en: 'All time' },
 ];
 
-function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }: {
-  occPct: number; filter: OccFilter; onFilter: (f: OccFilter) => void;
-  lang: 'ar' | 'en'; prevOccPct: number; deltaLabel: string;
+function OccRateCard({ occPct, prevOccPct, deltaLabel, lang }: {
+  occPct: number; prevOccPct: number; deltaLabel: string; lang: 'ar' | 'en';
 }) {
-  const tl = T[lang];
   const animated = useCountUp(occPct, 600);
   const d = delta(occPct, prevOccPct);
   const dColor = d > 0 ? '#2FA36B' : d < 0 ? '#CC4B4B' : '#888';
@@ -528,32 +526,18 @@ function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }:
 
   return (
     <div className="stat occ-rate-card">
-      <div className="sl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="si" style={{ '--c': 'var(--gold-deep)' } as React.CSSProperties}>{Icons.gauge}</span>
-          {tl.occRate}
-        </span>
-        {/* Dropdown filter */}
-        <select
-          value={filter}
-          onChange={e => onFilter(e.target.value as OccFilter)}
-          className="occ-select"
-          dir="ltr"
-        >
-          {OCC_FILTERS.map(f => (
-            <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
-          ))}
-        </select>
+      <div className="sl">
+        <span className="si" style={{ '--c': 'var(--gold-deep)' } as React.CSSProperties}>{Icons.gauge}</span>
+        {T[lang].occRate}
       </div>
       <div className="sv">{animated}%</div>
-      {filter !== 'current' && (
-        <span title={deltaLabel} style={{
-          color: dColor, background: `${dColor}18`, fontSize: 11, fontWeight: 700,
-          padding: '2px 7px', borderRadius: 99, marginTop: 2, display: 'inline-block',
-        }}>
-          {dArrow} {Math.abs(d)}%
-        </span>
-      )}
+      <span title={deltaLabel} style={{
+        color: dColor, background: `${dColor}18`, fontSize: 11, fontWeight: 700,
+        padding: '2px 7px', borderRadius: 99, marginTop: 2, display: 'inline-block',
+        visibility: d === 0 ? 'hidden' : 'visible',
+      }}>
+        {dArrow} {Math.abs(d)}%
+      </span>
       <div className="sbar">
         <i style={{ width: `${occPct}%`, background: 'var(--gold-deep)', display: 'block', height: '100%', borderRadius: 99, transition: 'width .6s' }} />
       </div>
@@ -574,9 +558,12 @@ export default function OverviewScreen() {
   const isAdmin = user?.role === 'admin';
   const { tip, show: showTip, move: moveTip, hide: hideTip } = useGlobalTip();
 
+  const [mounted, setMounted] = useState(false);
   const [range, setRange] = useState<RangeOption>(14);
   const [occFilter, setOccFilter] = useState<OccFilter>('current');
   const pageRef = useReveal();
+
+  useEffect(() => { setMounted(true); }, []);
 
   // ── Build date series for current and previous period ────────────────────
   const { currSeries, prevSeries } = useMemo(() => {
@@ -733,7 +720,7 @@ export default function OverviewScreen() {
   }, [settings, lang, dispatch]);
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
-  if (loading && rooms.length === 0) {
+  if (!mounted || (loading && rooms.length === 0)) {
     return (
       <div>
         <div className="page-h stagger" style={{ marginBottom: 18 }}>{tl.overviewTitle}</div>
@@ -775,16 +762,29 @@ export default function OverviewScreen() {
         </div>
       )}
 
+      {/* ── Occupancy filter row — ABOVE the cards ── */}
+      <div className="occ-filter-row">
+        <span className="occ-filter-label">{lang === 'ar' ? 'نسبة الإشغال:' : 'Occupancy rate:'}</span>
+        <div className="occ-chips">
+          {OCC_FILTERS.map(f => (
+            <button
+              key={f.key}
+              className={`occ-chip${occFilter === f.key ? ' on' : ''}`}
+              onClick={() => setOccFilter(f.key)}
+            >
+              {lang === 'ar' ? f.ar : f.en}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── KPI cards ── */}
       <div className="stats stats-animate">
-        {/* Occupancy rate card with filter chips */}
         <OccRateCard
           occPct={filteredOccPct}
-          filter={occFilter}
-          onFilter={setOccFilter}
-          lang={lang}
           prevOccPct={prevCounts.prevOccPct}
           deltaLabel={deltaLabel}
+          lang={lang}
         />
         <StatCard
           label={tl.occupiedRooms} value={`${inHouse} / ${totalRooms}`}
