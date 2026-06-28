@@ -378,16 +378,23 @@ input,select{font-family:inherit}
 .tl-pill-btn svg{width:17px;height:17px;display:block}
 .tl-pill-btn:hover{background:color-mix(in srgb,var(--gold) 14%,transparent);color:var(--gold-deep)}
 .tl-pill-btn:active{transform:scale(.86)}
-.tl-pill-today{color:var(--gold-deep);font-weight:800;min-width:52px;letter-spacing:.01em}
 /* thin dividers between pill sections */
 .tl-pill-div{width:1px;flex:none;background:color-mix(in srgb,var(--gold) 22%,var(--line));align-self:stretch}
-/* Rm corner label inside pill */
-.tl-pill-corner{
-  flex:none;width:52px;
-  display:grid;place-items:center;
-  font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.04em;
-  border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line));
+/* Today button in the toolbar (above the pill) */
+.tl-today-btn{
+  display:flex;align-items:center;justify-content:center;
+  height:34px;padding:0 16px;
+  border-radius:99px;
+  border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line));
+  background:color-mix(in srgb,var(--gold) 8%,transparent);
+  color:var(--gold-deep);font-size:13px;font-weight:800;
+  cursor:pointer;letter-spacing:.01em;
+  transition:background var(--dur-xs),transform var(--dur-xs);
 }
+.tl-today-btn:hover{background:color-mix(in srgb,var(--gold) 18%,transparent)}
+.tl-today-btn:active{transform:scale(.92)}
+/* Spacer inside pill matching the grid's room-label column width */
+.tl-pill-spacer{flex:none;width:56px}
 /* Scrollable date strip inside pill — hides scrollbar */
 .tl-pill-dates{
   flex:1;

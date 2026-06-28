@@ -271,10 +271,10 @@ function TimelineView() {
 
   return (
     <div>
-      {/* Top toolbar */}
+      {/* Top toolbar: view toggle · Today · legend */}
       <div className="tl-top">
         <CalViewToggle />
-        {/* Legend */}
+        <button className="tl-today-btn" onClick={handleToday}>{t.today}</button>
         <div className="tl-legend">
           {legendItems.map((li) => (
             <span key={li.key} className="li" style={{ "--c": li.color } as React.CSSProperties}>
@@ -295,7 +295,7 @@ function TimelineView() {
         {t.tlHint}
       </p>
 
-      {/* ── Floating glass pill: [<] [Rm] [date strip] [Today] [>] ── */}
+      {/* ── Floating glass pill: [<] [date strip] [>] ── */}
       <div className="tl-pill">
         {/* ‹ prev */}
         <button className="tl-pill-btn" onClick={handlePrev} aria-label={lang === "ar" ? "السابق" : "Previous"}>
@@ -304,8 +304,8 @@ function TimelineView() {
           </svg>
         </button>
         <div className="tl-pill-div" />
-        {/* Room corner label inside pill */}
-        <div className="tl-pill-corner">{lang === "ar" ? "غرفة" : "Rm"}</div>
+        {/* 56px spacer aligns dates with the grid's room-label column */}
+        <div className="tl-pill-spacer" />
         {/* Scrollable date strip — synced to grid below */}
         <div className="tl-pill-dates" ref={pillScrollRef}>
           {days.map((day, idx) => {
@@ -327,11 +327,6 @@ function TimelineView() {
             );
           })}
         </div>
-        <div className="tl-pill-div" />
-        {/* Today */}
-        <button className="tl-pill-btn tl-pill-today" onClick={handleToday}>
-          {t.today}
-        </button>
         <div className="tl-pill-div" />
         {/* › next */}
         <button className="tl-pill-btn" onClick={handleNext} aria-label={lang === "ar" ? "التالي" : "Next"}>
