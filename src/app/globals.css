@@ -347,13 +347,12 @@ input,select{font-family:inherit}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
-/* Timeline scroll container — no top border, the pill headrow provides the visual top */
-.tl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
-.tl{min-width:780px}
+/* Timeline scroll container — no min-width; CSS grid fills the container */
+.tl-scroll{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
 
-/* Floating glass pill — the date header row */
+/* Floating glass pill — the date header row (CSS grid; columns set inline) */
 .tl-headrow{
-  display:flex;
+  display:grid;
   margin:8px 8px 4px;
   border-radius:14px;
   background:color-mix(in srgb,var(--surface-2) 70%,transparent);
@@ -368,34 +367,70 @@ input,select{font-family:inherit}
   border-color:color-mix(in srgb,var(--gold) 30%,rgba(255,255,255,.07));
   box-shadow:0 4px 24px rgba(0,0,0,.40), 0 0 0 1px rgba(255,255,255,.06) inset;
 }
-.tl-corner{width:56px;flex:none;border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line));display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint)}
-.tl-days{display:grid;grid-auto-flow:column;grid-auto-columns:60px}
-.tl-day{padding:9px 2px 8px;text-align:center;border-inline-start:1px solid var(--line-soft)}
+.tl-corner{display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint);border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line))}
+.tl-day{padding:10px 4px 9px;text-align:center;border-inline-start:1px solid var(--line-soft)}
 .tl-day:first-child{border-inline-start:none}
-.tl-day.today{background:color-mix(in srgb,var(--gold) 20%,transparent);border-bottom:2px solid var(--gold)}
-.tl-day .wd{font-size:9.5px;color:var(--faint);font-weight:700;letter-spacing:.02em}
+.tl-day .wd{font-size:10px;color:var(--faint);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.tl-day .dn{font-size:20px;font-weight:800;line-height:1.1;margin-top:3px}
 .tl-day.today .wd{color:var(--gold-deep)}
-.tl-day .dn{font-size:14px;font-weight:800;line-height:1.2;margin-top:1px}
-.tl-day.today .dn{color:var(--gold-deep)}
-.tl-day .mon{font-size:9px;font-weight:800;color:var(--gold-deep);letter-spacing:.02em;height:11px;line-height:11px;margin-bottom:1px}
-.tl-day.mstart{border-inline-start:2px solid var(--gold)!important}
-.tl-row{display:flex;border-bottom:1px solid var(--line-soft)}
-.tl-row:last-child{border-bottom:none}
-.tl-room{width:56px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border-inline-end:1px solid var(--line);background:var(--surface-2)}
+.tl-day.today .dn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--gold);color:#1b1407;
+  margin-top:2px;
+}
+
+/* Room rows — CSS grid, single row; position:relative for z-index stacking of bars */
+.tl-row{
+  display:grid;
+  grid-template-rows:56px;
+  position:relative;
+  border-top:1px solid var(--line-soft);
+}
+.tl-row:first-of-type{border-top:none}
+.tl-room{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-inline-end:1px solid var(--line);
+  background:var(--surface-2);
+  padding:4px 0;
+  grid-row:1;
+  grid-column:1;
+}
 .tl-room i{font-style:normal;font-size:8.5px;color:var(--faint);font-weight:700}
 .tl-room b{font-size:15px;font-weight:800;line-height:1}
-.tl-cells{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:60px;min-height:48px}
-.tl-cell{border-inline-start:1px solid var(--line-soft);background:transparent;transition:background .12s;min-height:48px}
-.tl-cell:first-child{border-inline-start:none}
-.tl-cell:hover{background:color-mix(in srgb,var(--gold) 9%, transparent)}
-.tl-cell.today{background:color-mix(in srgb,var(--gold) 6%, transparent)}
-.tl-bar{position:absolute;top:7px;bottom:7px;border-radius:9px;color:#1b1407;font-size:12px;font-weight:700;
-  display:flex;align-items:center;padding:0 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:3;
-  background:linear-gradient(180deg,#d8b465,#bf9a3f);box-shadow:0 3px 10px -3px rgba(0,0,0,.35);cursor:pointer;transition:filter .15s,transform .12s}
-.tl-bar:hover{filter:brightness(1.05)}
-.tl-bar:active{transform:scale(.98)}
+
+/* Cells — grid children, grid-row:1 so bars (also row:1) can overlap them via z-index */
+.tl-cell{
+  grid-row:1;
+  border-inline-start:1px solid var(--line-soft);
+  background:transparent;transition:background .12s;
+  cursor:pointer;
+}
+.tl-cell:hover{background:color-mix(in srgb,var(--gold) 9%,transparent)}
+.tl-cell.today{background:color-mix(in srgb,var(--gold) 6%,transparent)}
+
+/* Booking bars — grid children of .tl-row, placed by grid-column set inline */
+.tl-bar{
+  grid-row:1;
+  z-index:3;
+  align-self:center;
+  margin:6px 2px;
+  min-height:36px;
+  border-radius:8px;
+  color:#1b1407;font-size:12px;font-weight:700;
+  display:flex;align-items:center;padding:0 10px;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  background:linear-gradient(180deg,#d8b465,#bf9a3f);
+  box-shadow:0 3px 10px -3px rgba(0,0,0,.35);
+  cursor:pointer;transition:filter .15s,transform .12s;
+  border:none;text-align:start;
+}
 .tl-bar.checkout{background:linear-gradient(180deg,#ec9a5f,#d97e3c);color:#2a1505}
 .tl-bar.future{background:linear-gradient(180deg,#e3cd97,#cdb678);color:#3a2e10}
+.tl-bar.cont-l{border-start-start-radius:0;border-end-start-radius:0}
+.tl-bar.cont-r{border-start-end-radius:0;border-end-end-radius:0}
+.tl-bar:hover{filter:brightness(1.07)}
+.tl-bar:active{transform:scale(.98)}
 .tl-hint{font-size:12.5px;color:var(--faint);font-weight:600;margin-top:12px;display:flex;align-items:center;gap:7px}
 .tl-hint svg{width:15px;height:15px}
 .th-right{display:flex;align-items:center;gap:7px}

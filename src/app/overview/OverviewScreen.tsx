@@ -327,20 +327,20 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
         const cx = X(i);
         const tipText = `${p.l}: ${p.v}${suffix}`;
         const isActive = localTip.visible && localTip.text === tipText;
-        const tipW = Math.max(tipText.length * 4.8 + 16, 40);
-        const tipH = 15;
+        const tipW = Math.max(tipText.length * 6.2 + 20, 52);
+        const tipH = 22;
         const tipX = Math.min(Math.max(cx - tipW / 2, PL), W - tipW - 2);
-        // Position tooltip clearly above the dot (or above the chart area top when dot is high)
         const dotY = max > 0 ? clampedPts[i].y : H - PB;
-        const tipY = Math.max(2, dotY - tipH - 14);
+        const tipY = Math.max(4, dotY - tipH - 10);
         return (
           <g key={`col-${i}`}>
+            {/* Transparent hit-rect — fill must be explicit "transparent", not a CSS var */}
             <rect
               x={lx.toFixed(1)}
               y={PT}
               width={Math.max(0, rx - lx).toFixed(1)}
               height={H - PT - PB}
-              fill="none"
+              fill="transparent"
               pointerEvents="all"
               style={{ cursor: 'crosshair' }}
               onMouseEnter={() => setLocalTip({ visible: true, text: tipText, pct: i / (n - 1) })}
@@ -348,19 +348,17 @@ function TrendChart({ series, color, suffix }: TrendChartProps) {
             />
             {isActive && (
               <g>
-                {/* Column highlight */}
-                <rect x={lx.toFixed(1)} y={PT} width={Math.max(0, rx - lx).toFixed(1)} height={H - PT - PB} fill={color} fillOpacity={0.06} rx={2} />
-                {/* Vertical guide line from dot to baseline */}
+                {/* Column highlight — use rgba gold, not CSS var (SVG fill doesn't support CSS vars) */}
+                <rect x={lx.toFixed(1)} y={PT} width={Math.max(0, rx - lx).toFixed(1)} height={H - PT - PB} fill="rgba(198,162,83,0.08)" rx={2} />
                 {max > 0 && (
-                  <line x1={cx} y1={clampedPts[i].y} x2={cx} y2={H - PB} stroke={color} strokeWidth={1} strokeOpacity={0.3} strokeDasharray="2 2" />
+                  <line x1={cx} y1={clampedPts[i].y} x2={cx} y2={H - PB} stroke="rgba(198,162,83,0.35)" strokeWidth={1} strokeDasharray="2 2" />
                 )}
-                {/* Active dot (larger, no inner ring) */}
                 {max > 0 && (
-                  <circle cx={cx} cy={clampedPts[i].y} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
+                  <circle cx={cx} cy={clampedPts[i].y} r={4.5} fill="#c6a253" stroke="#1b2233" strokeWidth={2} />
                 )}
-                {/* Tooltip pill */}
-                <rect x={tipX} y={tipY} width={tipW} height={tipH} rx={4.5} fill={color} fillOpacity={0.92} />
-                <text x={tipX + tipW / 2} y={tipY + 10.5} textAnchor="middle" fontSize={8.5} fontWeight={700} fill="#fff">{tipText}</text>
+                {/* Tooltip pill — gold bg, dark text */}
+                <rect x={tipX} y={tipY} width={tipW} height={tipH} rx={6} fill="#c6a253" />
+                <text x={tipX + tipW / 2} y={tipY + 14.5} textAnchor="middle" fontSize={11} fontWeight={700} fill="#1b1407">{tipText}</text>
               </g>
             )}
           </g>
@@ -771,7 +769,7 @@ export default function OverviewScreen() {
       {tip.visible && (
         <div
           className="qtip show"
-          style={{ left: tip.x, top: tip.y - 44, transform: 'translateX(-50%)', position: 'fixed', zIndex: 300, pointerEvents: 'none' }}
+          style={{ left: tip.x, top: tip.y - 52, transform: 'translateX(-50%)', position: 'fixed', zIndex: 300, pointerEvents: 'none' }}
         >
           {tip.text}
         </div>

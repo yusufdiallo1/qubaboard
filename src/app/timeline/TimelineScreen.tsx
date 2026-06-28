@@ -10,6 +10,7 @@ import {
   monthFirst,
   shiftMonth,
   occOnDate,
+  daysInMonthOf,
 } from "@/lib/helpers";
 import { T } from "@/lib/i18n";
 
@@ -18,10 +19,9 @@ import { T } from "@/lib/i18n";
 // ---------------------------------------------------------------------------
 
 const TOTAL_ROOMS = 20;
-const DAYS = 30;
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers (local — kept here so they don't pollute helpers.ts)
 // ---------------------------------------------------------------------------
 
 function z(n: number): string {
@@ -127,64 +127,67 @@ function TimelineNav({ onPrev, onNext, onToday, rangeLabel }: TimelineNavProps) 
 }
 
 // ---------------------------------------------------------------------------
-// TIMELINE VIEW
+// TIMELINE VIEW — 10-day paginated grid layout
 // ---------------------------------------------------------------------------
 
 function TimelineView() {
-  const { lang, tlStart, bookings, rooms } = useAppState();
+  const { lang, tlMonthOffset, tlChunk, bookings } = useAppState();
   const dispatch = useAppDispatch();
   const t = T[lang];
-  const isRtl = lang === "ar";
 
   const today = localToday();
 
-  // The first day shown in the strip = today + tlStart offset
-  const firstDay = isoAdd(today, tlStart);
+  // Which month are we viewing?
+  const viewMonthFirst = shiftMonth(monthFirst(today), tlMonthOffset);
+  const { y: viewY, m: viewM } = parseParts(viewMonthFirst);
+  const dim = daysInMonth(viewY, viewM); // total days in viewed month
 
-  // Build the 30-day column dates
-  const days: string[] = [];
-  for (let i = 0; i < DAYS; i++) {
-    days.push(isoAdd(firstDay, i));
+  // Page bounds (1-indexed day numbers within the month)
+  const pageStart = tlChunk * 10 + 1;
+  const pageEnd = tlChunk < 2 ? Math.min(tlChunk * 10 + 10, dim) : dim;
+  const N = pageEnd - pageStart + 1; // number of columns
+
+  // ISO strings for page boundary checks
+  const pageStartISO = isoAdd(viewMonthFirst, pageStart - 1);
+  const pageEndExclISO = isoAdd(viewMonthFirst, pageEnd); // exclusive upper bound
+
+  // Day numbers for this page: [pageStart, pageStart+1, ..., pageEnd]
+  const dayNumbers: number[] = [];
+  for (let d = pageStart; d <= pageEnd; d++) dayNumbers.push(d);
+
+  // Get the ISO date for day number d within the viewed month
+  function dayISO(d: number): string {
+    return isoAdd(viewMonthFirst, d - 1);
   }
 
-  const lastDay = days[DAYS - 1];
+  // CSS grid template: 56px room column + N equal day columns
+  const colTemplate = `56px repeat(${N}, minmax(0, 1fr))`;
 
-  // Range label: "D Mon – D Mon"
-  function buildRangeLabel(): string {
-    const fp = parseParts(firstDay);
-    const lp = parseParts(lastDay);
-    const fm = t.months[fp.m - 1];
-    const lm = t.months[lp.m - 1];
-    if (fp.m === lp.m) {
-      return `${fp.d} – ${lp.d} ${fm}`;
-    }
-    return `${fp.d} ${fm} – ${lp.d} ${lm}`;
-  }
+  // Range label: "1–10 Jan 2026"
+  const rangeLabel = `${pageStart}–${pageEnd} ${t.months[viewM - 1]} ${viewY}`;
 
-  const rangeLabel = buildRangeLabel();
-
-  // Nav handlers
-  const handlePrev = useCallback(() => {
-    dispatch({ type: "SET_TL_START", payload: tlStart - 7 });
-  }, [dispatch, tlStart]);
-
+  // Navigation handlers
   const handleNext = useCallback(() => {
-    dispatch({ type: "SET_TL_START", payload: tlStart + 7 });
-  }, [dispatch, tlStart]);
+    if (tlChunk < 2) {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: tlChunk + 1 } });
+    } else {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset + 1, chunk: 0 } });
+    }
+  }, [dispatch, tlMonthOffset, tlChunk]);
+
+  const handlePrev = useCallback(() => {
+    if (tlChunk > 0) {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: tlChunk - 1 } });
+    } else {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset - 1, chunk: 2 } });
+    }
+  }, [dispatch, tlMonthOffset, tlChunk]);
 
   const handleToday = useCallback(() => {
-    dispatch({ type: "SET_TL_START", payload: 0 });
+    const todayDay = new Date().getDate();
+    const chunk = todayDay <= 10 ? 0 : todayDay <= 20 ? 1 : 2;
+    dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: 0, chunk } });
   }, [dispatch]);
-
-  // Auto-advance: when today moves past the last visible day, roll the window
-  // forward so today is always visible (rolling window that tracks real time).
-  useEffect(() => {
-    const lastVisible = isoAdd(today, tlStart + DAYS - 1);
-    if (today > lastVisible) {
-      // today is past the window — snap start so today is the first column
-      dispatch({ type: "SET_TL_START", payload: 0 });
-    }
-  }, [today, tlStart, dispatch]);
 
   // Click on empty cell → open sheet with new booking date
   const handleCellClick = useCallback(
@@ -211,42 +214,16 @@ function TimelineView() {
   // Build room numbers 1–20
   const roomNos = Array.from({ length: TOTAL_ROOMS }, (_, i) => i + 1);
 
-  // For each room, find bookings that overlap the visible window
+  // For each room, find bookings that overlap the visible 10-day page
   function getVisibleBookings(roomNo: number) {
     return bookings.filter((b) => {
       if (b.room_no !== roomNo || b.checked_out) return false;
-      // overlaps window if b.check_in < lastDay+1 AND b.check_out > firstDay
-      return b.check_in <= lastDay && b.check_out > firstDay;
+      // half-open interval: b overlaps [pageStartISO, pageEndExclISO)
+      return b.check_out > pageStartISO && b.check_in < pageEndExclISO;
     });
   }
 
-  // Figure out which bar style to use
-  function barClass(b: { check_in: string; check_out: string }): string {
-    if (b.check_out === today) return "tl-bar checkout";
-    if (b.check_in > today) return "tl-bar future";
-    return "tl-bar";
-  }
-
-  // Compute left% and width% for a booking bar within the 30-day window
-  function barStyle(b: { check_in: string; check_out: string }): React.CSSProperties {
-    const startClipped = b.check_in < firstDay ? firstDay : b.check_in;
-    const endClipped = b.check_out > lastDay ? isoAdd(lastDay, 1) : b.check_out;
-
-    const startIdx = diffDays(firstDay, startClipped);
-    const endIdx = diffDays(firstDay, endClipped);
-    const daysVisible = Math.max(0, endIdx - startIdx);
-
-    // Position is relative to the .tl-cells container which spans DAYS columns of 60px each
-    const leftPct = (startIdx / DAYS) * 100;
-    const widthPct = (daysVisible / DAYS) * 100;
-
-    return {
-      left: `${leftPct}%`,
-      width: `${widthPct}%`,
-    };
-  }
-
-  // Legend dots colors
+  // Legend items
   const legendItems = [
     { key: "inhouse", label: t.inhouse, color: "var(--booked)" },
     { key: "reserved", label: t.reserved, color: "#e3cd97" },
@@ -255,18 +232,18 @@ function TimelineView() {
 
   return (
     <div>
-      {/* Toolbar: [CalViewToggle] [< >] [Today] [range] ··· [legend] */}
+      {/* Toolbar */}
       <div className="tl-top">
         <CalViewToggle />
         <div className="tl-nav">
           <button className="tl-navbtn" onClick={handlePrev} aria-label={lang === "ar" ? "السابق" : "Previous"}>
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {isRtl ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
+              {lang === "ar" ? <polyline points="8 5 13 10 8 15" /> : <polyline points="12 5 7 10 12 15" />}
             </svg>
           </button>
           <button className="tl-navbtn" onClick={handleNext} aria-label={lang === "ar" ? "التالي" : "Next"}>
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {isRtl ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
+              {lang === "ar" ? <polyline points="12 5 7 10 12 15" /> : <polyline points="8 5 13 10 8 15" />}
             </svg>
           </button>
         </div>
@@ -292,77 +269,100 @@ function TimelineView() {
         {t.tlHint}
       </p>
 
-      {/* Scrollable grid — header row built into scroll container */}
+      {/* Grid — no horizontal scroll needed since N ≤ 11 columns */}
       <div className="tl-scroll">
-        <div className="tl">
-          {/* Date header row */}
-          <div className="tl-headrow">
-            <div className="tl-corner">{t.roomShort ?? (lang === "ar" ? "غ" : "Rm")}</div>
-            <div className="tl-days">
-              {days.map((day, idx) => {
-                const parts = parseParts(day);
-                const isToday = day === today;
-                const prevDay = idx > 0 ? days[idx - 1] : null;
-                const isMonthStart = prevDay ? parseParts(prevDay).m !== parts.m : true;
-                const wdLabel = t.wmin[weekdayOf(day)];
-                const monLabel = isMonthStart ? t.months[parts.m - 1].slice(0, 3) : "";
-                let cls = "tl-day";
-                if (isToday) cls += " today";
-                if (isMonthStart && idx > 0) cls += " mstart";
-                return (
-                  <div key={day} className={cls}>
-                    <div className="mon">{monLabel}</div>
-                    <div className="wd">{wdLabel}</div>
-                    <div className="dn">{parts.d}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Room rows */}
-          {roomNos.map((roomNo) => {
-            const visibleBookings = getVisibleBookings(roomNo);
+        {/* Date header row — glass pill */}
+        <div className="tl-headrow" style={{ gridTemplateColumns: colTemplate }}>
+          <div className="tl-corner">{t.roomShort ?? (lang === "ar" ? "غ" : "Rm")}</div>
+          {dayNumbers.map((d) => {
+            const iso = dayISO(d);
+            const isToday = iso === today;
+            const wdIdx = weekdayOf(iso);
+            const wdLabel = t.wdays[wdIdx];
+            let cls = "tl-day";
+            if (isToday) cls += " today";
             return (
-              <div key={roomNo} className="tl-row">
-                <div className="tl-room">
-                  <i>{lang === "ar" ? "غ" : "Rm"}</i>
-                  <b>{roomNo}</b>
-                </div>
-                <div className="tl-cells">
-                  {days.map((day) => {
-                    const isToday = day === today;
-                    let cellCls = "tl-cell";
-                    if (isToday) cellCls += " today";
-                    return (
-                      <div
-                        key={day}
-                        className={cellCls}
-                        onClick={() => handleCellClick(roomNo, day)}
-                        role="button"
-                        aria-label={`New booking room ${roomNo} on ${day}`}
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleCellClick(roomNo, day); }}
-                      />
-                    );
-                  })}
-                  {visibleBookings.map((b) => (
-                    <button
-                      key={b.id}
-                      className={barClass(b)}
-                      style={barStyle(b)}
-                      onClick={(e) => { e.stopPropagation(); handleBarClick(roomNo, b.id); }}
-                      title={b.guest_name}
-                      aria-label={`Booking: ${b.guest_name}`}
-                    >
-                      {b.guest_name}
-                    </button>
-                  ))}
-                </div>
+              <div key={d} className={cls}>
+                <div className="wd">{wdLabel}</div>
+                <div className="dn">{d}</div>
               </div>
             );
           })}
         </div>
+
+        {/* Room rows */}
+        {roomNos.map((roomNo) => {
+          const visibleBookings = getVisibleBookings(roomNo);
+          return (
+            <div key={roomNo} className="tl-row" style={{ gridTemplateColumns: colTemplate }}>
+              {/* Room label — column 1 */}
+              <div className="tl-room">
+                <i>{lang === "ar" ? "غ" : "Rm"}</i>
+                <b>{roomNo}</b>
+              </div>
+
+              {/* Day cells — columns 2..N+1, grid-row 1 */}
+              {dayNumbers.map((d) => {
+                const iso = dayISO(d);
+                const isToday = iso === today;
+                return (
+                  <div
+                    key={d}
+                    className={"tl-cell" + (isToday ? " today" : "")}
+                    onClick={() => handleCellClick(roomNo, iso)}
+                    role="button"
+                    aria-label={`New booking room ${roomNo} on ${iso}`}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleCellClick(roomNo, iso);
+                    }}
+                  />
+                );
+              })}
+
+              {/* Booking bars — also grid children, placed by grid-column */}
+              {visibleBookings.map((b) => {
+                // Skip if completely outside (shouldn't happen due to filter, but be safe)
+                if (b.check_out <= pageStartISO || b.check_in >= pageEndExclISO) return null;
+
+                // Which day number does the bar start/end on within this page?
+                const inDay = b.check_in < pageStartISO
+                  ? pageStart
+                  : parseParts(b.check_in).d;
+                const outDay = b.check_out >= pageEndExclISO
+                  ? pageEnd + 1
+                  : parseParts(b.check_out).d;
+
+                // Grid columns: room is col 1, days are cols 2..(N+1)
+                const colStart = inDay - pageStart + 2;
+                const colEnd = outDay - pageStart + 2;
+
+                // Does the bar continue beyond the left/right edge of the page?
+                const contL = b.check_in < pageStartISO;
+                const contR = b.check_out > pageEndExclISO;
+
+                let barCls = "tl-bar";
+                if (b.check_out === today) barCls += " checkout";
+                else if (b.check_in > today) barCls += " future";
+                if (contL) barCls += " cont-l";
+                if (contR) barCls += " cont-r";
+
+                return (
+                  <button
+                    key={b.id}
+                    className={barCls}
+                    style={{ gridColumn: `${colStart} / ${colEnd}` }}
+                    onClick={(e) => { e.stopPropagation(); handleBarClick(roomNo, b.id); }}
+                    title={b.guest_name}
+                    aria-label={`Booking: ${b.guest_name}`}
+                  >
+                    {b.guest_name}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -380,11 +380,6 @@ function MonthView() {
   const today = localToday();
 
   // Determine displayed month
-  let baseMonth = monthFirst(today);
-  for (let i = 0; i < Math.abs(calMonthOffset); i++) {
-    baseMonth = shiftMonth(baseMonth, calMonthOffset > 0 ? 1 : -1);
-  }
-  // Easier: compute directly
   const displayMonthFirst = shiftMonth(monthFirst(today), calMonthOffset);
   const { y: dispY, m: dispM } = parseParts(displayMonthFirst);
   const totalDaysInMonth = daysInMonth(dispY, dispM);
@@ -407,12 +402,19 @@ function MonthView() {
     dispatch({ type: "SET_CAL_MONTH_OFFSET", payload: 0 });
   }, [dispatch]);
 
-  // Tapping a day opens timeline at that date
+  // Tapping a day switches to timeline view at that chunk
   const handleDayClick = useCallback(
     (iso: string) => {
-      // Switch to timeline view and set tlStart so that iso is the first visible day
-      const offset = diffDays(today, iso);
-      dispatch({ type: "SET_TL_START", payload: offset });
+      const { d } = parseParts(iso);
+      const chunk = d <= 10 ? 0 : d <= 20 ? 1 : 2;
+      // monthOffset: how many months away is this iso from today's month?
+      const todayMonthFirst = monthFirst(today);
+      const isoMonthFirst = monthFirst(iso);
+      // Compute offset by counting months
+      const tp = parseParts(todayMonthFirst);
+      const ip = parseParts(isoMonthFirst);
+      const monthOffset = (ip.y - tp.y) * 12 + (ip.m - tp.m);
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset, chunk } });
       dispatch({ type: "SET_CAL_VIEW", payload: "timeline" });
     },
     [dispatch, today]
