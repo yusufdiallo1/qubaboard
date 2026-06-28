@@ -19,10 +19,8 @@ import { useCountUp } from '@/lib/useCountUp';
 import {
   localToday,
   isoAdd,
-  fmtDate,
   diffDays,
   roomStatus,
-  occOnDate,
 } from '@/lib/helpers';
 import type { Room, Booking, BookingSource, RoomStatus } from '@/lib/types';
 import { T } from '@/lib/i18n';
@@ -686,22 +684,6 @@ export default function OverviewScreen() {
     .filter((n) => n > 0);
   const avgStay = stays.length ? stays.reduce((a, b) => a + b, 0) / stays.length : 0;
 
-  // ── 14-day series ─────────────────────────────────────────────────────────
-
-  const occSeries14: TrendPoint[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = isoAdd(today, -i);
-    const v = Math.round((occOnDate(bookings, d) / totalRooms) * 100);
-    occSeries14.push({ v, l: fmtDate(d, lang), x: parseInt(d.split('-')[2], 10) });
-  }
-
-  const revSeries14: TrendPoint[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = isoAdd(today, -i);
-    const v = revOnDate(bookings, d);
-    revSeries14.push({ v, l: fmtDate(d, lang), x: parseInt(d.split('-')[2], 10) });
-  }
-
   // ── Donut segments ────────────────────────────────────────────────────────
 
   const occSegs: DonutSeg[] = [
@@ -899,32 +881,6 @@ export default function OverviewScreen() {
           bar={null}
         />
       </div>
-
-      {/* Occupancy trend (14 days) */}
-      <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
-        <h3>{tl.occTrendTitle}</h3>
-        <div className="trendwrap">
-          <TrendChart
-            series={occSeries14}
-            color="var(--gold-deep)"
-            suffix="%"
-          />
-        </div>
-      </div>
-
-      {/* Revenue trend (admin only) */}
-      {isAdmin && (
-        <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
-          <h3>{tl.revTrendTitle}</h3>
-          <div className="trendwrap">
-            <TrendChart
-              series={revSeries14}
-              color="var(--free)"
-              suffix=" SAR"
-            />
-          </div>
-        </div>
-      )}
 
       {/* Donut charts side-by-side */}
       <div className="panels reveal">
