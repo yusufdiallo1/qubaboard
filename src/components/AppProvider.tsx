@@ -23,27 +23,30 @@ function AppBootstrap({ children }: { children: ReactNode }) {
     const supabase = createClient();
 
     async function loadUser() {
-      // getUser() hits Supabase directly and works with SSR cookies
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // Use getSession() first — reads from localStorage, no network round-trip.
+      // Then fire getUser() in the background to validate with Supabase server.
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
 
-      if (error || !user) {
+      if (!userId) {
         router.replace('/login');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, name, role')
-        .eq('id', user.id)
-        .single();
+      // Fetch profile and validate token concurrently
+      const [profileRes] = await Promise.all([
+        supabase.from('profiles').select('id, name, role').eq('id', userId).single(),
+        supabase.auth.getUser(), // background server validation — result unused here
+      ]);
 
+      const profile = profileRes.data;
       if (!profile) {
         await supabase.auth.signOut();
         router.replace('/login');
         return;
       }
 
-      const username = (user.email ?? '').split('@')[0];
+      const username = (session.user.email ?? '').split('@')[0];
       dispatch({
         type: 'SET_USER',
         payload: {

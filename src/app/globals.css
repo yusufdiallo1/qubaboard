@@ -353,41 +353,38 @@ input,select{font-family:inherit}
 /* Floating glass pill — the date header row (CSS grid; columns set inline) */
 .tl-headrow{
   display:grid;
-  margin:8px 8px 4px;
-  border-radius:14px;
-  background:color-mix(in srgb,var(--surface-2) 70%,transparent);
-  backdrop-filter:blur(18px) saturate(170%);
-  -webkit-backdrop-filter:blur(18px) saturate(170%);
-  border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));
-  box-shadow:0 4px 20px rgba(0,0,0,.13), 0 0 0 1px rgba(255,255,255,.05) inset;
+  margin:10px 10px 6px;
+  border-radius:16px;
+  background:color-mix(in srgb,var(--surface-2) 80%,transparent);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid color-mix(in srgb,var(--gold) 22%,var(--line));
+  box-shadow:0 2px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(255,255,255,.04) inset;
   overflow:hidden;
 }
 [data-theme="dark"] .tl-headrow{
-  background:color-mix(in srgb,var(--navy) 80%,transparent);
-  border-color:color-mix(in srgb,var(--gold) 30%,rgba(255,255,255,.07));
-  box-shadow:0 4px 24px rgba(0,0,0,.40), 0 0 0 1px rgba(255,255,255,.06) inset;
+  background:color-mix(in srgb,var(--navy-deep,#0e1726) 85%,transparent);
+  border-color:color-mix(in srgb,var(--gold) 20%,rgba(255,255,255,.06));
+  box-shadow:0 2px 20px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.05) inset;
 }
 .tl-corner{display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint);border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line))}
-.tl-day{padding:10px 4px 9px;text-align:center;border-inline-start:1px solid var(--line-soft)}
+.tl-day{padding:8px 4px 7px;text-align:center;border-inline-start:1px solid var(--line-soft)}
 .tl-day:first-child{border-inline-start:none}
-.tl-day .wd{font-size:10px;color:var(--faint);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-.tl-day .dn{font-size:20px;font-weight:800;line-height:1.1;margin-top:3px}
+.tl-day .wd{font-size:9.5px;color:var(--faint);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.tl-day .dn{font-size:18px;font-weight:800;line-height:1.15;margin-top:2px}
+.tl-day.today{background:color-mix(in srgb,var(--gold) 10%,transparent)}
 .tl-day.today .wd{color:var(--gold-deep)}
-.tl-day.today .dn{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:36px;height:36px;border-radius:50%;
-  background:var(--gold);color:#1b1407;
-  margin-top:2px;
-}
+.tl-day.today .dn{color:var(--gold-deep)}
 
 /* Room rows — CSS grid, single row; position:relative for z-index stacking of bars */
 .tl-row{
   display:grid;
-  grid-template-rows:56px;
+  grid-template-rows:52px;
   position:relative;
   border-top:1px solid var(--line-soft);
 }
 .tl-row:first-of-type{border-top:none}
+.tl-row:last-of-type .tl-cell{border-bottom:none}
 .tl-room{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   border-inline-end:1px solid var(--line);
