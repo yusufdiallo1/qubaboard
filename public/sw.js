@@ -1,37 +1,18 @@
-const CACHE = 'quba-v1';
-const SHELL = ['/', '/board', '/login', '/logo.png', '/manifest.json'];
+const CACHE = 'quba-v3';
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET navigation requests — pass through API/Supabase
-  const url = new URL(e.request.url);
-  if (e.request.method !== 'GET') return;
-  if (url.hostname !== self.location.hostname) return;
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return;
-
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const network = fetch(e.request).then((res) => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, clone));
-        }
-        return res;
-      });
-      return cached || network;
-    })
-  );
+  // Pass everything through to the network — no caching to avoid stale asset issues
+  // during development. Re-enable caching only for production builds.
 });
