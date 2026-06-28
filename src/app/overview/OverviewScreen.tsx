@@ -64,6 +64,7 @@ const SRCCOLOR_HEX: Record<BookingSource, string> = {
 };
 
 type RangeOption = 7 | 14 | 30;
+type OccFilter = 'alltime' | 'current' | 'last7' | 'lastmonth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pure helpers (timezone-safe, no toISOString)
@@ -126,10 +127,12 @@ interface TrendChartProps {
 }
 
 function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<SVGGElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
   const hasAnimRef = useRef(false);
-  const lineRef = useRef<SVGPathElement>(null);
+  const lineRef = useRef<SVGPolylineElement>(null);
+  const activeIdxRef = useRef<number>(-1);
 
   const W = 560; const H = 160; const PT = 16; const PB = 22; const PL = 36; const PR = 6;
   const n = Math.max(series.length, 1);
@@ -141,7 +144,6 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
   const X = (i: number) => PL + (W - PL - PR) * (n <= 1 ? 0.5 : i / (n - 1));
   const Y = (v: number) => max === 0 ? (H - PB) : PT + (H - PT - PB) * (1 - v / yMax);
 
-  // Polyline points string (straight segments like reference — cleaner, no overshoot)
   const pts = series.map((p, i) => ({ x: X(i), y: Y(p.v) }));
   const polyPts = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
@@ -179,103 +181,123 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
     requestAnimationFrame(step);
   }, [max]);
 
-  // Hover: direct DOM manipulation — zero React re-renders
-  const showOverlay = useCallback((i: number) => {
+  // Hover: SVG overlay for crosshair/highlight, HTML div for cursor-following tooltip
+  const showOverlay = useCallback((i: number, clientX: number, clientY: number) => {
+    if (activeIdxRef.current === i && tipRef.current?.style.display === 'block') {
+      // just move tooltip
+      if (tipRef.current) {
+        tipRef.current.style.left = `${clientX + 12}px`;
+        tipRef.current.style.top  = `${clientY - 28}px`;
+      }
+      return;
+    }
+    activeIdxRef.current = i;
     const g = overlayRef.current;
-    if (!g) return;
+    const tipEl = tipRef.current;
     const p = series[i];
-    if (!p) return;
+    if (!p || !g) return;
     const cx = X(i);
     const cy = max > 0 ? Y(p.v) : baseline;
     const lx = hitLeft(i);
     const rx = hitRight(i);
-    const tipText = `${p.label}: ${p.v}${suffix}`;
-    const tipW = Math.max(tipText.length * 6.5 + 20, 60);
-    const tipH = 22;
-    const tipX = Math.min(Math.max(cx - tipW / 2, PL), W - tipW - 2);
-    const tipY = Math.max(4, cy - tipH - 10);
 
     g.innerHTML = `
       <rect x="${lx.toFixed(1)}" y="${PT}" width="${Math.max(0, rx - lx).toFixed(1)}" height="${H - PT - PB}" fill="rgba(198,162,83,0.09)" rx="2"/>
-      ${max > 0 ? `<line x1="${cx}" y1="${cy.toFixed(1)}" x2="${cx}" y2="${baseline}" stroke="rgba(198,162,83,0.4)" stroke-width="1" stroke-dasharray="3 3"/>` : ''}
+      ${max > 0 ? `<line x1="${cx}" y1="${cy.toFixed(1)}" x2="${cx}" y2="${baseline}" stroke="rgba(198,162,83,0.35)" stroke-width="1" stroke-dasharray="3 3"/>` : ''}
       ${max > 0 ? `<circle cx="${cx}" cy="${cy.toFixed(1)}" r="5" fill="${color}" stroke="#0e1726" stroke-width="2"/>` : ''}
-      <rect x="${tipX.toFixed(1)}" y="${tipY.toFixed(1)}" width="${tipW.toFixed(1)}" height="${tipH}" rx="6" fill="#c6a253"/>
-      <text x="${(tipX + tipW / 2).toFixed(1)}" y="${(tipY + 14.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#1b1407">${tipText}</text>
     `;
     g.style.display = 'block';
+
+    if (tipEl) {
+      tipEl.textContent = `${p.label}: ${p.v}${suffix}`;
+      tipEl.style.display = 'block';
+      tipEl.style.left = `${clientX + 12}px`;
+      tipEl.style.top  = `${clientY - 28}px`;
+    }
   }, [series, max, suffix, color]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hideOverlay = useCallback(() => {
+    activeIdxRef.current = -1;
     const g = overlayRef.current;
     if (g) { g.innerHTML = ''; g.style.display = 'none'; }
+    if (tipRef.current) tipRef.current.style.display = 'none';
   }, []);
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${W} ${H}`}
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-      onMouseLeave={hideOverlay}
-    >
-      {/* Grid lines */}
-      {yTicks.map((tk, i) => (
-        <g key={i}>
-          <line x1={PL} y1={tk.y.toFixed(1)} x2={W - PR} y2={tk.y.toFixed(1)}
-            stroke="rgba(128,128,128,0.15)" strokeWidth={i === 0 ? 1 : 0.7} />
-          <text x={(PL - 5).toFixed(1)} y={(tk.y + 3.5).toFixed(1)}
-            textAnchor="end" fontSize={8} fontWeight={600} fill="rgba(128,128,128,0.7)">
-            {suffix === '%' ? `${tk.v}%` : tk.v === 0 ? '0' : `${(tk.v / 1000).toFixed(tk.v >= 1000 ? 0 : 1)}k`}
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      {/* Cursor-following tooltip div — outside SVG so it follows real mouse coords */}
+      <div ref={tipRef} style={{
+        display: 'none', position: 'fixed', zIndex: 400, pointerEvents: 'none',
+        background: '#c6a253', color: '#1b1407', borderRadius: 7,
+        padding: '3px 9px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+      }} />
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+        onMouseLeave={hideOverlay}
+      >
+        {/* Grid lines */}
+        {yTicks.map((tk, i) => (
+          <g key={i}>
+            <line x1={PL} y1={tk.y.toFixed(1)} x2={W - PR} y2={tk.y.toFixed(1)}
+              stroke="rgba(128,128,128,0.15)" strokeWidth={i === 0 ? 1 : 0.7} />
+            <text x={(PL - 5).toFixed(1)} y={(tk.y + 3.5).toFixed(1)}
+              textAnchor="end" fontSize={8} fontWeight={600} fill="rgba(128,128,128,0.7)">
+              {suffix === '%' ? `${tk.v}%` : tk.v === 0 ? '0' : `${(tk.v / 1000).toFixed(tk.v >= 1000 ? 0 : 1)}k`}
+            </text>
+          </g>
+        ))}
+
+        {/* Area fill */}
+        {max > 0 && <path d={areaD} fill={areaColor} opacity={0.13} />}
+
+        {/* Zero baseline */}
+        {max === 0 && (
+          <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB}
+            stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 5" />
+        )}
+
+        {/* Line */}
+        {max > 0 && (
+          <polyline ref={lineRef}
+            points={polyPts} fill="none" stroke={color} strokeWidth={2.2}
+            strokeLinejoin="round" strokeLinecap="round" />
+        )}
+
+        {/* Dots */}
+        {pts.map((p, i) => (
+          <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)}
+            r={3.5} fill={color} stroke="#0e1726" strokeWidth={1.5} />
+        ))}
+
+        {/* Axis labels every other point */}
+        {series.map((p, i) => (i % 2 === 0 || i === n - 1) && (
+          <text key={i} x={X(i).toFixed(1)} y={H - 6}
+            textAnchor="middle" fontSize={8.5} fontWeight={600} fill="rgba(128,128,128,0.7)">
+            {p.dayNum}
           </text>
-        </g>
-      ))}
+        ))}
 
-      {/* Area fill */}
-      {max > 0 && <path d={areaD} fill={areaColor} opacity={0.13} />}
+        {/* Overlay group — written directly via innerHTML on hover */}
+        <g ref={overlayRef} style={{ display: 'none' }} />
 
-      {/* Zero baseline */}
-      {max === 0 && (
-        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB}
-          stroke={color} strokeWidth={1.5} strokeOpacity={0.3} strokeDasharray="4 5" />
-      )}
-
-      {/* Line */}
-      {max > 0 && (
-        <polyline ref={lineRef as React.RefObject<SVGPolylineElement & SVGPathElement>}
-          points={polyPts} fill="none" stroke={color} strokeWidth={2.2}
-          strokeLinejoin="round" strokeLinecap="round" />
-      )}
-
-      {/* Dots */}
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)}
-          r={3.5} fill={color} stroke="#0e1726" strokeWidth={1.5} />
-      ))}
-
-      {/* Axis labels every other point */}
-      {series.map((p, i) => (i % 2 === 0 || i === n - 1) && (
-        <text key={i} x={X(i).toFixed(1)} y={H - 6}
-          textAnchor="middle" fontSize={8.5} fontWeight={600} fill="rgba(128,128,128,0.7)">
-          {p.dayNum}
-        </text>
-      ))}
-
-      {/* Overlay group — written directly via innerHTML on hover */}
-      <g ref={overlayRef} style={{ display: 'none' }} />
-
-      {/* Transparent hit-rects — must be last so they're on top */}
-      {series.map((_, i) => (
-        <rect
-          key={i}
-          x={hitLeft(i).toFixed(1)} y={PT}
-          width={Math.max(0, hitRight(i) - hitLeft(i)).toFixed(1)}
-          height={H - PT - PB}
-          fill="transparent"
-          style={{ cursor: 'crosshair' }}
-          onMouseEnter={() => showOverlay(i)}
-          onMouseLeave={hideOverlay}
-        />
-      ))}
-    </svg>
+        {/* Transparent hit-rects — must be last so they're on top */}
+        {series.map((_, i) => (
+          <rect
+            key={i}
+            x={hitLeft(i).toFixed(1)} y={PT}
+            width={Math.max(0, hitRight(i) - hitLeft(i)).toFixed(1)}
+            height={H - PT - PB}
+            fill="transparent"
+            style={{ cursor: 'crosshair' }}
+            onMouseEnter={(e) => showOverlay(i, e.clientX, e.clientY)}
+            onMouseMove={(e) => showOverlay(i, e.clientX, e.clientY)}
+            onMouseLeave={hideOverlay}
+          />
+        ))}
+      </svg>
+    </div>
   );
 }
 
@@ -505,6 +527,61 @@ const Icons = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// OccRateCard — occupancy rate with period filter chips
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OCC_FILTERS: { key: OccFilter; ar: string; en: string }[] = [
+  { key: 'alltime',   ar: 'كل الوقت', en: 'All time' },
+  { key: 'current',   ar: 'الآن',     en: 'Current'  },
+  { key: 'last7',     ar: '7 أيام',   en: 'Last 7d'  },
+  { key: 'lastmonth', ar: 'شهر',      en: 'Last 30d' },
+];
+
+function OccRateCard({ occPct, filter, onFilter, lang, prevOccPct, deltaLabel }: {
+  occPct: number; filter: OccFilter; onFilter: (f: OccFilter) => void;
+  lang: 'ar' | 'en'; prevOccPct: number; deltaLabel: string;
+}) {
+  const tl = T[lang];
+  const animated = useCountUp(occPct, 600);
+  const d = delta(occPct, prevOccPct);
+  const dColor = d > 0 ? '#2FA36B' : d < 0 ? '#CC4B4B' : '#888';
+  const dArrow = d > 0 ? '▲' : d < 0 ? '▼' : '–';
+
+  return (
+    <div className="stat occ-rate-card">
+      <div className="sl">
+        <span className="si" style={{ '--c': 'var(--gold-deep)' } as React.CSSProperties}>{Icons.gauge}</span>
+        {tl.occRate}
+      </div>
+      <div className="sv">{animated}%</div>
+      {filter !== 'current' && (
+        <span title={deltaLabel} style={{
+          color: dColor, background: `${dColor}18`, fontSize: 11, fontWeight: 700,
+          padding: '2px 7px', borderRadius: 99, marginTop: 2, display: 'inline-block',
+        }}>
+          {dArrow} {Math.abs(d)}%
+        </span>
+      )}
+      <div className="sbar">
+        <i style={{ width: `${occPct}%`, background: 'var(--gold-deep)', display: 'block', height: '100%', borderRadius: 99, transition: 'width .6s' }} />
+      </div>
+      {/* Filter chips */}
+      <div className="occ-chips">
+        {OCC_FILTERS.map(f => (
+          <button
+            key={f.key}
+            className={`occ-chip${filter === f.key ? ' on' : ''}`}
+            onClick={() => onFilter(f.key)}
+          >
+            {lang === 'ar' ? f.ar : f.en}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main OverviewScreen
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -518,6 +595,7 @@ export default function OverviewScreen() {
   const { tip, show: showTip, move: moveTip, hide: hideTip } = useGlobalTip();
 
   const [range, setRange] = useState<RangeOption>(14);
+  const [occFilter, setOccFilter] = useState<OccFilter>('current');
   const pageRef = useReveal();
 
   // ── Build date series for current and previous period ────────────────────
@@ -544,6 +622,36 @@ export default function OverviewScreen() {
   const totalRooms = rooms.length || TOTAL_ROOMS;
   const inHouse = (counts.booked || 0) + (counts.checkout || 0);
   const occPct = Math.round((inHouse / totalRooms) * 100);
+
+  // Occupancy filter: compute avg occupancy for the selected window
+  const filteredOccPct = useMemo(() => {
+    if (occFilter === 'current') return occPct;
+    if (occFilter === 'alltime') {
+      if (bookings.length === 0) return 0;
+      // Average daily occ across all booking dates (check_in to check_out)
+      const earliest = bookings.reduce((m, b) => b.check_in < m ? b.check_in : m, today);
+      const days: string[] = [];
+      for (let i = 0; ; i++) {
+        const d = isoAdd(earliest, i);
+        if (d > today) break;
+        days.push(d);
+      }
+      if (days.length === 0) return 0;
+      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / days.length;
+      return Math.round((avg / totalRooms) * 100);
+    }
+    if (occFilter === 'last7') {
+      const days = Array.from({ length: 7 }, (_, i) => isoAdd(today, -(6 - i)));
+      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / 7;
+      return Math.round((avg / totalRooms) * 100);
+    }
+    if (occFilter === 'lastmonth') {
+      const days = Array.from({ length: 30 }, (_, i) => isoAdd(today, -(29 - i)));
+      const avg = days.reduce((s, d) => s + occOnDate(bookings, d), 0) / 30;
+      return Math.round((avg / totalRooms) * 100);
+    }
+    return occPct;
+  }, [occFilter, occPct, bookings, today, totalRooms]);
 
   const rev = useMemo(() =>
     bookings.filter(b => !b.checked_out).reduce((s, b) => s + (Number(b.amount) || 0), 0),
@@ -691,10 +799,14 @@ export default function OverviewScreen() {
 
       {/* ── KPI cards ── */}
       <div className="stats stats-animate">
-        <StatCard
-          label={tl.occRate} value={`${occPct}%`} rawValue={occPct} suffix="%" sub={null}
-          icon={Icons.gauge} color="var(--gold-deep)" bar={occPct}
-          prevValue={prevCounts.prevOccPct} deltaTooltip={deltaLabel}
+        {/* Occupancy rate card with filter chips */}
+        <OccRateCard
+          occPct={filteredOccPct}
+          filter={occFilter}
+          onFilter={setOccFilter}
+          lang={lang}
+          prevOccPct={prevCounts.prevOccPct}
+          deltaLabel={deltaLabel}
         />
         <StatCard
           label={tl.occupiedRooms} value={`${inHouse} / ${totalRooms}`}
