@@ -873,7 +873,7 @@ export default function OverviewScreen() {
       )}
 
       {/* ── Status bars + Floor bars ── */}
-      <div className="panels reveal" style={{ marginTop: 0 }}>
+      <div className="panels reveal" style={{}}>
         <div className="panel">
           <h3>{tl.statusTitle}</h3>
           {([ ['empty', counts.empty||0, SCOLOR.empty, SCOLOR_HEX.empty],
@@ -920,7 +920,7 @@ export default function OverviewScreen() {
       </div>
 
       {/* ── Attention + Upcoming ── */}
-      <div className="panels reveal" style={{ marginTop: 0 }}>
+      <div className="panels reveal" style={{}}>
         {/* Rooms needing attention */}
         <div className="panel">
           <h3>{lang === 'ar' ? 'غرف تحتاج اهتمام' : 'Rooms needing attention'}</h3>
