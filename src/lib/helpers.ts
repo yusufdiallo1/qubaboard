@@ -94,6 +94,16 @@ export function monthFirst(iso: string): string {
   return iso.slice(0, 8) + '01';
 }
 
+/**
+ * Number of days in the month that contains the given ISO date.
+ * Uses local component math — never UTC.
+ * new Date(year, month, 0) gives the last day of the previous month.
+ */
+export function daysInMonthOf(iso: string): number {
+  const p = iso.split('-');
+  return new Date(+p[0], +p[1], 0).getDate();
+}
+
 /** Shift month forward/back by n. Returns first day of resulting month. */
 export function shiftMonth(iso: string, n: number): string {
   const p = iso.split('-');

@@ -68,7 +68,9 @@ export interface AppState {
   openFrom: 'board' | 'rooms';
 
   // Timeline
-  tlStart: number;
+  tlStart: number; // kept for MonthView backward compat
+  tlMonthOffset: number; // 0 = current month, negative = past, positive = future
+  tlChunk: number; // 0 = days 1–10, 1 = days 11–20, 2 = days 21–end
   calView: CalView;
   calMonthOffset: number;
 
@@ -139,6 +141,8 @@ export const initialState: AppState = {
 
   // Timeline
   tlStart: 0,
+  tlMonthOffset: 0,
+  tlChunk: 0, // will be overridden by getSeed() based on today's date
   calView: 'timeline',
   calMonthOffset: 0,
 
@@ -207,6 +211,9 @@ export type AppAction =
 
   // Timeline
   | { type: 'SET_TL_START'; payload: number }
+  | { type: 'SET_TL_MONTH_OFFSET'; payload: number }
+  | { type: 'SET_TL_CHUNK'; payload: number }
+  | { type: 'SET_TL_PAGE'; payload: { monthOffset: number; chunk: number } }
   | { type: 'SET_CAL_VIEW'; payload: CalView }
   | { type: 'SET_CAL_MONTH_OFFSET'; payload: number }
 
@@ -342,6 +349,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     // ---- Timeline ----
     case 'SET_TL_START':
       return { ...state, tlStart: action.payload };
+
+    case 'SET_TL_MONTH_OFFSET':
+      return { ...state, tlMonthOffset: action.payload };
+
+    case 'SET_TL_CHUNK':
+      return { ...state, tlChunk: action.payload };
+
+    case 'SET_TL_PAGE':
+      return { ...state, tlMonthOffset: action.payload.monthOffset, tlChunk: action.payload.chunk };
 
     case 'SET_CAL_VIEW':
       return { ...state, calView: action.payload };

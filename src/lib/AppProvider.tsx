@@ -11,13 +11,49 @@
  *   // or import from store.ts for non-JSX needs
  */
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
   AppStateContext,
   AppDispatchContext,
   useAppReducer,
   type AppState,
 } from './store';
+
+/** Read timeline page state from localStorage and compute tlChunk from today. */
+function getSeed(): Partial<AppState> {
+  const seed: Partial<AppState> = {};
+
+  if (typeof window === 'undefined') return seed;
+
+  // Restore language + theme (already done elsewhere, but harmless to include)
+  const storedLang = localStorage.getItem('quba-lang');
+  if (storedLang === 'ar' || storedLang === 'en') seed.lang = storedLang;
+
+  const storedTheme = localStorage.getItem('quba-theme');
+  if (storedTheme === 'light' || storedTheme === 'dark') seed.theme = storedTheme;
+
+  // Timeline month offset
+  const storedMonth = localStorage.getItem('quba-tl-month');
+  if (storedMonth !== null) {
+    const parsed = parseInt(storedMonth, 10);
+    if (!isNaN(parsed)) seed.tlMonthOffset = parsed;
+  }
+
+  // Timeline chunk — if stored, use it; otherwise derive from today's day
+  const storedChunk = localStorage.getItem('quba-tl-chunk');
+  if (storedChunk !== null) {
+    const parsed = parseInt(storedChunk, 10);
+    if (parsed === 0 || parsed === 1 || parsed === 2) {
+      seed.tlChunk = parsed;
+    }
+  } else {
+    // Default: show the chunk that contains today
+    const todayDay = new Date().getDate();
+    seed.tlChunk = todayDay <= 10 ? 0 : todayDay <= 20 ? 1 : 2;
+  }
+
+  return seed;
+}
 
 export type AppProviderProps = {
   children: ReactNode;
@@ -29,7 +65,19 @@ export type AppProviderProps = {
 };
 
 export function AppProvider({ children, seed }: AppProviderProps) {
-  const [state, dispatch] = useAppReducer(seed);
+  // Merge caller seed with localStorage seed (caller seed wins on conflicts)
+  const localSeed = getSeed();
+  const [state, dispatch] = useAppReducer({ ...localSeed, ...seed });
+
+  // Persist timeline page state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('quba-tl-month', String(state.tlMonthOffset));
+      localStorage.setItem('quba-tl-chunk', String(state.tlChunk));
+    } catch {
+      // localStorage may be unavailable in some environments — ignore
+    }
+  }, [state.tlMonthOffset, state.tlChunk]);
 
   return (
     <AppStateContext.Provider value={state}>
