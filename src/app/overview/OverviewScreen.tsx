@@ -726,7 +726,7 @@ export default function OverviewScreen() {
   }, [settings, lang, dispatch]);
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
-  if (!mounted || (loading && rooms.length === 0)) {
+  if (!mounted || loading || (rooms.length === 0 && bookings.length === 0)) {
     return (
       <div>
         <div className="page-h stagger" style={{ marginBottom: 18 }}>{tl.overviewTitle}</div>
