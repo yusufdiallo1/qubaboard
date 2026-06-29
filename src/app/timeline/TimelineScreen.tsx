@@ -189,6 +189,12 @@ function TimelineView() {
     dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: 0, chunk } });
   }, [dispatch]);
 
+  // Always open on today's page
+  useEffect(() => {
+    handleToday();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Click on empty cell → open sheet with new booking date
   const handleCellClick = useCallback(
     (roomNo: number, date: string) => {
