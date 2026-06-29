@@ -191,6 +191,16 @@ export function useSupabaseData() {
         },
       )
 
+      // ---- profiles (employees) ----
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          // Re-fetch full employee list on any profile change
+          fetchAll();
+        },
+      )
+
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           dispatch({ type: "SET_REALTIME_STATUS", payload: "ok" });

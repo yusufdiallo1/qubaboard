@@ -17,9 +17,9 @@ import { T } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/client';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Seed usernames that cannot be deleted
-// ─────────────────────────────────────────────────────────────────────────────
-const SEED_USERNAMES = new Set(['admin', 'reception']);
+// The current logged-in admin cannot be deleted (handled via isSelf check)
+// No hardcoded seed usernames — all accounts are manageable
+const SEED_USERNAMES = new Set<string>();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SVG icons (inline, no external deps)
