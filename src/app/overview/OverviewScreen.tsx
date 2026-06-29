@@ -163,14 +163,6 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
 
   // Hover: SVG overlay for crosshair/highlight, HTML div for cursor-following tooltip
   const showOverlay = useCallback((i: number, clientX: number, clientY: number) => {
-    if (activeIdxRef.current === i && tipRef.current?.style.display === 'block') {
-      // just move tooltip
-      if (tipRef.current) {
-        tipRef.current.style.left = `${clientX + 7}px`;
-        tipRef.current.style.top  = `${clientY + 7}px`;
-      }
-      return;
-    }
     activeIdxRef.current = i;
     const g = overlayRef.current;
     const tipEl = tipRef.current;
@@ -191,8 +183,11 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
     if (tipEl) {
       tipEl.textContent = `${p.label}: ${p.v}${suffix}`;
       tipEl.style.display = 'block';
-      tipEl.style.left = `${clientX + 14}px`;
-      tipEl.style.top  = `${clientY - 10}px`;
+      // Auto-flip: if cursor is in right 40% of viewport, show tooltip to the left
+      const tipW = tipEl.offsetWidth || 120;
+      const flipLeft = clientX + tipW + 16 > window.innerWidth * 0.8;
+      tipEl.style.left = flipLeft ? `${clientX - tipW - 8}px` : `${clientX + 10}px`;
+      tipEl.style.top  = `${clientY + 7}px`;
     }
   }, [series, max, suffix, color]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -747,7 +742,8 @@ export default function OverviewScreen() {
       {/* Global tooltip — portal to body to escape backdrop-filter stacking context */}
       {tip.visible && typeof document !== 'undefined' && createPortal(
         <div className="qtip show" style={{
-          left: tip.x + 7, top: tip.y + 7, transform: 'none',
+          left: tip.x + (tip.x > window.innerWidth * 0.7 ? -(180) : 10),
+          top: tip.y + 7, transform: 'none',
           position: 'fixed', zIndex: 9999, pointerEvents: 'none',
         }}>
           {tip.text}

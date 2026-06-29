@@ -374,3 +374,93 @@ export async function removeEmployee(
   const { error } = await supabase.auth.admin.deleteUser(userId);
   return { error: error?.message ?? null };
 }
+
+// ---------------------------------------------------------------------------
+// logAudit
+// ---------------------------------------------------------------------------
+
+export async function logAudit(entry: {
+  actorId: string;
+  actorName: string;
+  action: string;
+  targetType?: string;
+  targetId?: string;
+  targetName?: string;
+  oldValue?: string;
+  newValue?: string;
+  ip?: string;
+  userAgent?: string;
+}): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.from("audit_log").insert({
+    actor_id:    entry.actorId,
+    actor_name:  entry.actorName,
+    action:      entry.action,
+    target_type: entry.targetType ?? null,
+    target_id:   entry.targetId ?? null,
+    target_name: entry.targetName ?? null,
+    old_value:   entry.oldValue ?? null,
+    new_value:   entry.newValue ?? null,
+    ip:          entry.ip ?? null,
+    user_agent:  entry.userAgent ?? null,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// updateEmployeeRole
+// ---------------------------------------------------------------------------
+
+export async function updateEmployeeRole(
+  userId: string,
+  newRole: "admin" | "staff",
+  actorId: string,
+  actorName: string,
+  targetName: string,
+  oldRole: string,
+): Promise<{ error: string | null }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: newRole })
+    .eq("id", userId);
+  if (error) return { error: error.message };
+
+  await logAudit({
+    actorId,
+    actorName,
+    action:      "role_change",
+    targetType:  "employee",
+    targetId:    userId,
+    targetName,
+    oldValue:    oldRole,
+    newValue:    newRole,
+  });
+  return { error: null };
+}
+
+// ---------------------------------------------------------------------------
+// getAuditLog
+// ---------------------------------------------------------------------------
+
+export async function getAuditLog(): Promise<{
+  data: Array<{
+    id: string;
+    actor_name: string;
+    action: string;
+    target_type: string | null;
+    target_name: string | null;
+    old_value: string | null;
+    new_value: string | null;
+    ip: string | null;
+    created_at: string;
+  }>;
+  error: string | null;
+}> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("audit_log")
+    .select("id, actor_name, action, target_type, target_name, old_value, new_value, ip, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  return { data: (data ?? []) as typeof data extends null ? [] : NonNullable<typeof data>, error: error?.message ?? null };
+}

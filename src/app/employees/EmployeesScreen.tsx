@@ -10,9 +10,9 @@
  * Seed accounts (admin@aurion.local, reception@aurion.local) cannot be removed.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
-import { addEmployee, removeEmployee } from '@/lib/supabaseActions';
+import { addEmployee, removeEmployee, updateEmployeeRole, getAuditLog } from '@/lib/supabaseActions';
 import { T } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/client';
 
@@ -105,6 +105,20 @@ export default function EmployeesScreen() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
+  // ── Role change ──
+  const [roleMenuId, setRoleMenuId] = useState<string | null>(null);
+  const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
+
+  // ── Audit log ──
+  const [auditLog, setAuditLog] = useState<Array<{
+    id: string; actor_name: string; action: string;
+    target_type: string | null; target_name: string | null;
+    old_value: string | null; new_value: string | null;
+    ip: string | null; created_at: string;
+  }>>([]);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
+
   const nameRef = useRef<HTMLInputElement>(null);
 
   // ── Fetch updated employees list from Supabase ──
@@ -195,6 +209,34 @@ export default function EmployeesScreen() {
     [handleAdd],
   );
 
+  // ── Role change handler ──
+  const handleRoleChange = useCallback(async (emp: typeof employees[0], newRole: 'admin' | 'staff') => {
+    if (emp.role === newRole) { setRoleMenuId(null); return; }
+    setRoleMenuId(null);
+    setChangingRoleId(emp.id);
+    const { error } = await updateEmployeeRole(
+      emp.id, newRole,
+      user?.id ?? '', user?.name ?? 'Admin',
+      emp.name, emp.role,
+    );
+    setChangingRoleId(null);
+    if (!error) {
+      dispatch({ type: 'SET_EMPLOYEES', payload: employees.map(e => e.id === emp.id ? { ...e, role: newRole } : e) });
+    }
+  }, [employees, user, dispatch]);
+
+  // ── Load audit log ──
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true);
+    const { data } = await getAuditLog();
+    setAuditLog(data ?? []);
+    setAuditLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (auditOpen) loadAudit();
+  }, [auditOpen, loadAudit]);
+
   return (
     <div>
       {/* Page header */}
@@ -235,8 +277,29 @@ export default function EmployeesScreen() {
                 <span className="you">{tx.you as string}</span>
               )}
 
-              {/* Role badge */}
-              <span className={`ebadge ${emp.role}`}>{roleLabel}</span>
+              {/* Role badge — clickable for admin to change role */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  className={`ebadge ${emp.role}`}
+                  style={{ cursor: isSelf ? 'default' : 'pointer', border: 'none', background: 'none' }}
+                  disabled={isSelf || changingRoleId === emp.id}
+                  onClick={() => !isSelf && setRoleMenuId(roleMenuId === emp.id ? null : emp.id)}
+                  title={isSelf ? '' : 'Click to change role'}
+                >
+                  {changingRoleId === emp.id ? '…' : roleLabel}
+                  {!isSelf && <span style={{ marginInlineStart: 4, opacity: 0.5, fontSize: 10 }}>▾</span>}
+                </button>
+                {roleMenuId === emp.id && (
+                  <div className="role-menu" onClick={e => e.stopPropagation()}>
+                    <button className={`role-opt${emp.role === 'admin' ? ' on' : ''}`} onClick={() => handleRoleChange(emp, 'admin')}>
+                      {tx.role_admin as string}
+                    </button>
+                    <button className={`role-opt${emp.role === 'staff' ? ' on' : ''}`} onClick={() => handleRoleChange(emp, 'staff')}>
+                      {tx.role_staff as string}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Remove button — hidden for self and seed accounts */}
               {!isSelf && !isSeed && (
@@ -376,6 +439,53 @@ export default function EmployeesScreen() {
           {adding ? '…' : (tx.add as string)}
         </button>
       </div>
+
+      {/* ── Audit log (admin only) ── */}
+      <div className="emp-add" style={{ marginTop: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: auditOpen ? 14 : 0 }}>
+          <h3 style={{ margin: 0 }}>{lang === 'ar' ? 'سجل التدقيق' : 'Audit Log'}</h3>
+          <button className="btn soft" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setAuditOpen(v => !v)}>
+            {auditOpen ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
+          </button>
+        </div>
+        {auditOpen && (
+          auditLoading ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.5, fontSize: 13 }}>…</div>
+          ) : auditLog.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.4, fontSize: 13 }}>
+              {lang === 'ar' ? 'لا توجد إدخالات بعد' : 'No entries yet'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {auditLog.map(entry => (
+                <div key={entry.id} style={{
+                  background: 'var(--surface-2)', borderRadius: 12, padding: '10px 14px',
+                  fontSize: 12.5, display: 'flex', flexDirection: 'column', gap: 3,
+                }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--text)' }}>{entry.actor_name}</span>
+                    <span style={{ color: 'var(--gold-deep)', fontWeight: 700 }}>
+                      {entry.action === 'role_change'
+                        ? `${lang === 'ar' ? 'غيّر الدور' : 'changed role'}: ${entry.old_value} → ${entry.new_value}`
+                        : entry.action}
+                    </span>
+                    {entry.target_name && <span style={{ color: 'var(--dim)' }}>{lang === 'ar' ? 'لـ' : 'for'} <b>{entry.target_name}</b></span>}
+                    <span style={{ marginInlineStart: 'auto', color: 'var(--faint)', fontSize: 11 }}>
+                      {new Date(entry.created_at).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
+                  {entry.ip && <span style={{ color: 'var(--faint)', fontSize: 11 }}>IP: {entry.ip}</span>}
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Close role menu on outside click */}
+      {roleMenuId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setRoleMenuId(null)} />
+      )}
     </div>
   );
 }
