@@ -103,6 +103,7 @@ export default function EmployeesScreen() {
 
   // ── Remove confirmation state (id of employee pending removal) ──
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -239,22 +240,33 @@ export default function EmployeesScreen() {
 
               {/* Remove button — hidden for self and seed accounts */}
               {!isSelf && !isSeed && (
-                <button
-                  className="rm"
-                  type="button"
-                  title="Remove"
-                  aria-label={`Remove ${emp.name}`}
-                  disabled={isRemoving}
-                  onClick={() => handleRemove(emp.id)}
-                >
-                  {isRemoving ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.4 }}>
-                      <circle cx="12" cy="12" r="9" />
-                    </svg>
-                  ) : (
-                    <TrashIcon />
-                  )}
-                </button>
+                confirmRemoveId === emp.id ? (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn soft" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => setConfirmRemoveId(null)}>
+                      {tx.cancel as string}
+                    </button>
+                    <button className="btn danger" style={{ padding: '4px 10px', fontSize: 12 }} disabled={isRemoving} onClick={() => { setConfirmRemoveId(null); handleRemove(emp.id); }}>
+                      {tx.remove as string}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="rm"
+                    type="button"
+                    title="Remove"
+                    aria-label={`Remove ${emp.name}`}
+                    disabled={isRemoving}
+                    onClick={() => setConfirmRemoveId(emp.id)}
+                  >
+                    {isRemoving ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.4 }}>
+                        <circle cx="12" cy="12" r="9" />
+                      </svg>
+                    ) : (
+                      <TrashIcon />
+                    )}
+                  </button>
+                )
               )}
             </div>
           );

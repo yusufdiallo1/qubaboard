@@ -501,6 +501,7 @@ export default function BookingSheet() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [detailsSaved, setDetailsSaved] = useState(false);
+  const [confirm, setConfirm] = useState<{ action: () => void; label: string } | null>(null);
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -759,7 +760,7 @@ export default function BookingSheet() {
   }, [dispatch]);
 
   // ---- Checkout ----
-  const handleCheckout = useCallback(
+  const doCheckout = useCallback(
     async (bookingId: string) => {
       if (roomNo == null) return;
       setIsSaving(true);
@@ -769,7 +770,6 @@ export default function BookingSheet() {
         showToast(result.error, "error");
         return;
       }
-      // Update local state optimistically
       dispatch({
         type: "UPSERT_BOOKING",
         payload: {
@@ -785,9 +785,15 @@ export default function BookingSheet() {
     },
     [roomNo, bookings, tl, showToast, dispatch]
   );
+  const handleCheckout = useCallback(
+    (bookingId: string) => {
+      setConfirm({ action: () => doCheckout(bookingId), label: tl("checkOutAct") });
+    },
+    [doCheckout, tl]
+  );
 
   // ---- Cancel booking ----
-  const handleCancelBooking = useCallback(
+  const doCancelBooking = useCallback(
     async (bookingId: string) => {
       setIsSaving(true);
       const result = await deleteBooking(bookingId);
@@ -799,6 +805,12 @@ export default function BookingSheet() {
       dispatch({ type: "DELETE_BOOKING", payload: bookingId });
     },
     [showToast, dispatch]
+  );
+  const handleCancelBooking = useCallback(
+    (bookingId: string) => {
+      setConfirm({ action: () => doCancelBooking(bookingId), label: tl("cancelBooking") });
+    },
+    [doCancelBooking, tl]
   );
 
   // ---- Mark room ready ----
@@ -1743,6 +1755,24 @@ export default function BookingSheet() {
           )}
         </div>
       </div>
+
+      {/* ── Confirm modal ── */}
+      {confirm && (
+        <div className="backdrop in" style={{ zIndex: 120 }} onClick={() => setConfirm(null)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="confirm-msg">{tl("areYouSure")}</p>
+            <div className="confirm-btns">
+              <button className="btn soft" onClick={() => setConfirm(null)}>{tl("cancel")}</button>
+              <button
+                className="btn danger"
+                onClick={() => { confirm.action(); setConfirm(null); }}
+              >
+                {confirm.label}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
