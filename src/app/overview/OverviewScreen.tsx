@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useReveal } from '@/lib/useReveal';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { StatsSkeleton, ChartSkeleton } from '@/components/Skeletons';
@@ -165,8 +166,8 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
     if (activeIdxRef.current === i && tipRef.current?.style.display === 'block') {
       // just move tooltip
       if (tipRef.current) {
-        tipRef.current.style.left = `${clientX + 14}px`;
-        tipRef.current.style.top  = `${clientY - 10}px`;
+        tipRef.current.style.left = `${clientX + 7}px`;
+        tipRef.current.style.top  = `${clientY + 7}px`;
       }
       return;
     }
@@ -204,13 +205,16 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Cursor-following tooltip div — outside SVG so it follows real mouse coords */}
-      <div ref={tipRef} style={{
-        display: 'none', position: 'fixed', zIndex: 400, pointerEvents: 'none',
-        background: '#c6a253', color: '#1b1407', borderRadius: 7,
-        padding: '3px 9px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
-      }} />
+      {/* Tooltip portal — rendered at body level to escape backdrop-filter stacking context */}
+      {typeof document !== 'undefined' && createPortal(
+        <div ref={tipRef} style={{
+          display: 'none', position: 'fixed', zIndex: 9999, pointerEvents: 'none',
+          background: '#c6a253', color: '#1b1407', borderRadius: 7,
+          padding: '3px 9px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+        }} />,
+        document.body
+      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -740,14 +744,15 @@ export default function OverviewScreen() {
 
   return (
     <div ref={pageRef as React.RefObject<HTMLDivElement>}>
-      {/* Global tooltip */}
-      {tip.visible && (
+      {/* Global tooltip — portal to body to escape backdrop-filter stacking context */}
+      {tip.visible && typeof document !== 'undefined' && createPortal(
         <div className="qtip show" style={{
-          left: tip.x + 14, top: tip.y - 10, transform: 'none',
-          position: 'fixed', zIndex: 300, pointerEvents: 'none',
+          left: tip.x + 7, top: tip.y + 7, transform: 'none',
+          position: 'fixed', zIndex: 9999, pointerEvents: 'none',
         }}>
           {tip.text}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
