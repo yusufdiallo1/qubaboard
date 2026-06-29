@@ -18,6 +18,23 @@ function AppBootstrap({ children }: { children: ReactNode }) {
   // Wire Supabase realtime
   useSupabaseData();
 
+  // Restore persisted preferences from localStorage after first client render
+  useEffect(() => {
+    try {
+      const lang = localStorage.getItem('quba-lang') as 'ar' | 'en' | null;
+      const theme = localStorage.getItem('quba-theme') as 'light' | 'dark' | null;
+      const rawPage = localStorage.getItem('quba-page') ?? 'board';
+      const rawView = localStorage.getItem('quba-view') ?? 'grid';
+      const VALID_PAGES = new Set(['board', 'timeline', 'overview', 'rooms', 'employees']);
+      const VALID_VIEWS = new Set(['grid', 'list']);
+      if (lang) dispatch({ type: 'SET_LANG', payload: lang });
+      if (theme) dispatch({ type: 'SET_THEME', payload: theme });
+      if (VALID_PAGES.has(rawPage)) dispatch({ type: 'SET_PAGE', payload: rawPage as 'board' | 'timeline' | 'overview' | 'rooms' | 'employees' });
+      if (VALID_VIEWS.has(rawView)) dispatch({ type: 'SET_VIEW', payload: rawView as 'grid' | 'list' });
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load user profile (non-blocking — render immediately, populate async)
   useEffect(() => {
     const supabase = createClient();
@@ -122,7 +139,8 @@ function getSeed(): { lang: 'ar' | 'en'; theme: 'light' | 'dark'; page: 'board' 
 }
 
 export default function AppProvider({ children }: { children: ReactNode }) {
-  const seed = typeof window !== 'undefined' ? getSeed() : { lang: 'ar' as const, theme: 'light' as const, page: 'board' as const, view: 'grid' as const };
+  // Always use safe defaults for SSR — localStorage is read in AppBootstrap after mount
+  const seed = { lang: 'ar' as const, theme: 'light' as const, page: 'board' as const, view: 'grid' as const };
   return (
     <StoreProvider seed={seed}>
       <ServiceWorker />

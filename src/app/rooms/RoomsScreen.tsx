@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
 import { localToday, roomStatus, statusColor, currentBooking } from '@/lib/helpers';
+import { saveSettings } from '@/lib/supabaseActions';
 import type { Room } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -37,12 +39,71 @@ const SCOLOR: Record<string, string> = {
 // ---------------------------------------------------------------------------
 // RoomsScreen — admin-only, shows all 20 rooms grouped by floor
 // ---------------------------------------------------------------------------
+function RatePanel({ lang, currentRate, rateSaved, onSave }: {
+  lang: 'ar' | 'en'; currentRate: number; rateSaved: boolean; onSave: (r: number) => void;
+}) {
+  const rateT = {
+    ar: { rateTitle: 'السعر الليلي', setRate: 'حفظ', saved: 'تم الحفظ', rateHint: 'سعر الغرفة لليلة الواحدة بالريال السعودي' },
+    en: { rateTitle: 'Nightly Rate', setRate: 'Save', saved: 'Saved', rateHint: 'Per-room price per night in SAR' },
+  }[lang];
+  const [value, setValue] = useState(String(currentRate));
+  useEffect(() => { setValue(String(currentRate)); }, [currentRate]);
+
+  return (
+    <div className="panel rate-panel" style={{ marginBottom: 14 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>{rateT.rateTitle}</h3>
+      <div className="rate-row">
+        <span className="rate-cur">SAR</span>
+        <input
+          type="text" dir="ltr" inputMode="numeric" value={value}
+          onChange={e => setValue(e.target.value)}
+          style={{ flex: 1, minWidth: 120, background: 'var(--surface)', border: '1px solid var(--line)',
+            borderRadius: 11, padding: '12px 14px', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
+        />
+        <button className={`btn-rate${rateSaved ? ' done' : ''}`} onClick={() => {
+          const n = parseInt(value, 10);
+          if (!isNaN(n) && n > 0) onSave(n);
+        }}>
+          {rateSaved ? (
+            <span className="chk">
+              <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                style={{ animation: 'checkpop .35s cubic-bezier(.2,.9,.3,1.4) both' }}>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          ) : null}
+          {rateSaved ? rateT.saved : rateT.setRate}
+        </button>
+      </div>
+      <div className="rate-hint">{rateT.rateHint}</div>
+    </div>
+  );
+}
+
 export default function RoomsScreen() {
   const state = useAppState();
   const dispatch = useAppDispatch();
-  const { lang, rooms, bookings } = state;
+  const { lang, rooms, bookings, settings, rateSaved, user } = state;
   const t = getT(lang);
   const today = localToday();
+  const isAdmin = user?.role === 'admin';
+
+  const handleSaveRate = useCallback(async (rate: number) => {
+    if (!settings) return;
+    const { error } = await saveSettings(rate);
+    if (error) {
+      const id = `rate-err-${Date.now()}`;
+      dispatch({ type: 'PUSH_TOAST', payload: { id, message: String(error), variant: 'error' } });
+      setTimeout(() => dispatch({ type: 'DISMISS_TOAST', payload: id }), 3500);
+      return;
+    }
+    dispatch({ type: 'SET_SETTINGS', payload: { ...settings, daily_rate: rate } });
+    dispatch({ type: 'SET_RATE_SAVED', payload: true });
+    const okId = `rate-ok-${Date.now()}`;
+    dispatch({ type: 'PUSH_TOAST', payload: { id: okId, message: lang === 'ar' ? 'تم حفظ السعر الليلي' : 'Nightly rate saved', variant: 'success' } });
+    setTimeout(() => dispatch({ type: 'DISMISS_TOAST', payload: okId }), 2500);
+    setTimeout(() => dispatch({ type: 'SET_RATE_SAVED', payload: false }), 2000);
+  }, [settings, lang, dispatch]);
 
   // Partition rooms by floor
   const floor1 = rooms.filter(r => r.floor === 1).sort((a, b) => a.no - b.no);
@@ -153,6 +214,11 @@ export default function RoomsScreen() {
       {/* Page heading */}
       <div className="page-h">{t('nav_rooms')}</div>
       <div className="page-sub">{t('roomsSub')}</div>
+
+      {/* Nightly rate panel — admin only */}
+      {isAdmin && settings && (
+        <RatePanel lang={lang} currentRate={settings.daily_rate} rateSaved={rateSaved} onSave={handleSaveRate} />
+      )}
 
       {/* Floor 1 — rooms 1–10 */}
       <FloorSection label={t('floor1')} floorRooms={floor1} />

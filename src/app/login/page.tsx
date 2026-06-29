@@ -28,6 +28,7 @@ type Lang = "ar" | "en";
 type Theme = "light" | "dark";
 
 export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState<Lang>("en");
   const [theme, setTheme] = useState<Theme>("light");
   const [username, setUsername] = useState("");
@@ -36,7 +37,10 @@ export default function LoginPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
+    if (!mounted) return;
     const l = localStorage.getItem("quba_lang") as Lang | null;
     const t = localStorage.getItem("quba_theme") as Theme | null;
     if (l === "ar" || l === "en") {
@@ -47,15 +51,16 @@ export default function LoginPage() {
       setLang(browserLang.startsWith("ar") ? "ar" : "en");
     }
     if (t === "dark" || t === "light") setTheme(t);
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("quba_lang", lang);
     localStorage.setItem("quba_theme", theme);
-  }, [lang, theme]);
+  }, [lang, theme, mounted]);
 
   const t = (k: keyof typeof T.ar) => T[lang][k];
 
@@ -92,6 +97,8 @@ export default function LoginPage() {
       <path d="M9.5 10.5a3 3 0 0 0 4 4" strokeLinecap="round"/>
     </svg>
   );
+
+  if (!mounted) return null;
 
   return (
     <>

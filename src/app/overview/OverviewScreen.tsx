@@ -165,8 +165,8 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
     if (activeIdxRef.current === i && tipRef.current?.style.display === 'block') {
       // just move tooltip
       if (tipRef.current) {
-        tipRef.current.style.left = `${clientX + 12}px`;
-        tipRef.current.style.top  = `${clientY - 28}px`;
+        tipRef.current.style.left = `${clientX + 14}px`;
+        tipRef.current.style.top  = `${clientY - 10}px`;
       }
       return;
     }
@@ -190,8 +190,8 @@ function TrendChart({ series, color, areaColor, suffix }: TrendChartProps) {
     if (tipEl) {
       tipEl.textContent = `${p.label}: ${p.v}${suffix}`;
       tipEl.style.display = 'block';
-      tipEl.style.left = `${clientX + 12}px`;
-      tipEl.style.top  = `${clientY - 28}px`;
+      tipEl.style.left = `${clientX + 14}px`;
+      tipEl.style.top  = `${clientY - 10}px`;
     }
   }, [series, max, suffix, color]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -588,7 +588,9 @@ export default function OverviewScreen() {
 
   const totalRooms = rooms.length || TOTAL_ROOMS;
   const inHouse = (counts.booked || 0) + (counts.checkout || 0);
-  const occPct = Math.round((inHouse / totalRooms) * 100);
+  // True in-house count: only rooms with check_in <= today < check_out (excludes upcoming)
+  const inHouseToday = occOnDate(bookings, today) + (counts.checkout || 0);
+  const occPct = Math.round((inHouseToday / totalRooms) * 100);
 
   // Occupancy filter: compute avg occupancy for the selected window
   const filteredOccPct = useMemo((): number => {
@@ -622,7 +624,7 @@ export default function OverviewScreen() {
     bookings.filter(b => !b.checked_out).reduce((s, b) => s + (Number(b.amount) || 0), 0),
   [bookings]);
 
-  const adr = inHouse ? Math.round(rev / inHouse) : 0;
+  const adr = inHouseToday ? Math.round(rev / inHouseToday) : 0;
   const revpar = Math.round(rev / totalRooms);
 
   const stays = useMemo(() => bookings.map(b => nightsBetween(b.check_in, b.check_out)).filter(n => n > 0), [bookings]);
@@ -741,7 +743,7 @@ export default function OverviewScreen() {
       {/* Global tooltip */}
       {tip.visible && (
         <div className="qtip show" style={{
-          left: tip.x, top: tip.y - 52, transform: 'translateX(-50%)',
+          left: tip.x + 14, top: tip.y - 10, transform: 'none',
           position: 'fixed', zIndex: 300, pointerEvents: 'none',
         }}>
           {tip.text}
@@ -752,30 +754,21 @@ export default function OverviewScreen() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
         <div className="page-h stagger" style={{ marginBottom: 0 }}>{tl.overviewTitle}</div>
         <RangeSwitcher range={range} onChange={setRange} />
-      </div>
-      <div className="page-sub stagger">{tl.overviewSub}</div>
-
-      {/* Rate panel */}
-      {isAdmin && settings && (
-        <div className="reveal">
-          <RatePanel lang={lang} currentRate={settings.daily_rate} rateSaved={rateSaved} onSave={handleSaveRate} />
+        <div style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="occ-filter-label">{lang === 'ar' ? 'الإشغال:' : 'Occupancy:'}</span>
+          <select
+            value={occFilter}
+            onChange={e => setOccFilter(e.target.value as OccFilter)}
+            className="occ-select"
+            dir="ltr"
+          >
+            {OCC_FILTERS.map(f => (
+              <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
+            ))}
+          </select>
         </div>
-      )}
-
-      {/* ── Occupancy filter dropdown — ABOVE the cards ── */}
-      <div className="occ-filter-row">
-        <span className="occ-filter-label">{lang === 'ar' ? 'نسبة الإشغال:' : 'Occupancy rate:'}</span>
-        <select
-          value={occFilter}
-          onChange={e => setOccFilter(e.target.value as OccFilter)}
-          className="occ-select"
-          dir="ltr"
-        >
-          {OCC_FILTERS.map(f => (
-            <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
-          ))}
-        </select>
       </div>
+      <div className="page-sub stagger" style={{ marginBottom: 12 }}>{tl.overviewSub}</div>
 
       {/* ── KPI cards ── */}
       <div className="stats stats-animate">
@@ -786,8 +779,8 @@ export default function OverviewScreen() {
           lang={lang}
         />
         <StatCard
-          label={tl.occupiedRooms} value={`${inHouse} / ${totalRooms}`}
-          rawValue={inHouse} suffix={` / ${totalRooms}`} sub={tl.occupied_lab}
+          label={tl.occupiedRooms} value={`${inHouseToday} / ${totalRooms}`}
+          rawValue={inHouseToday} suffix={` / ${totalRooms}`} sub={tl.occupied_lab}
           icon={Icons.bed} color="var(--booked)" bar={null}
           prevValue={prevCounts.prevInHouse} deltaTooltip={deltaLabel}
         />
@@ -828,21 +821,6 @@ export default function OverviewScreen() {
         />
       </div>
 
-      {/* ── Trend charts ── */}
-      <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>{lang === 'ar' ? `الإشغال (${range} يوم)` : `Occupancy (${range} days)`}</span>
-        </h3>
-        <TrendChart series={occTrend} color="#c6a253" areaColor="#c6a253" suffix="%" />
-      </div>
-
-      {isAdmin && (
-        <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
-          <h3>{lang === 'ar' ? `الإيراد (${range} يوم)` : `Revenue (${range} days)`}</h3>
-          <TrendChart series={revTrend} color="#2FA36B" areaColor="#2FA36B" suffix=" SAR" />
-        </div>
-      )}
-
       {/* ── Donuts ── */}
       <div className="panels reveal" style={{ marginTop: 14 }}>
         <div className="panel">
@@ -878,6 +856,21 @@ export default function OverviewScreen() {
           </div>
         </div>
       </div>
+
+      {/* ── Trend charts ── */}
+      <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{lang === 'ar' ? `الإشغال (${range} يوم)` : `Occupancy (${range} days)`}</span>
+        </h3>
+        <TrendChart series={occTrend} color="#c6a253" areaColor="#c6a253" suffix="%" />
+      </div>
+
+      {isAdmin && (
+        <div className="panel wpanel reveal" style={{ marginTop: 14 }}>
+          <h3>{lang === 'ar' ? `الإيراد (${range} يوم)` : `Revenue (${range} days)`}</h3>
+          <TrendChart series={revTrend} color="#2FA36B" areaColor="#2FA36B" suffix=" SAR" />
+        </div>
+      )}
 
       {/* ── Status bars + Floor bars ── */}
       <div className="panels reveal" style={{ marginTop: 0 }}>
@@ -976,6 +969,7 @@ export default function OverviewScreen() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

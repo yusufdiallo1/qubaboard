@@ -100,10 +100,6 @@ export default function BoardScreen() {
   const t = getT(lang);
   const today = localToday();
 
-  if (loading && rooms.length === 0) {
-    return <BoardSkeleton count={8} />;
-  }
-
   // Ref for the filter dropdown so we can close on outside click
   const dropRef = useRef<HTMLDivElement>(null);
 
@@ -192,6 +188,10 @@ export default function BoardScreen() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rooms, bookings, today, filter, search]);
+
+  if (loading && rooms.length === 0) {
+    return <BoardSkeleton count={8} />;
+  }
 
   // Description helper (show in active language if cached, else fall back to original)
   function descFor(r: Room): string {

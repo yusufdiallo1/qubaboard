@@ -159,15 +159,18 @@ export default function AppShell() {
   const today = localToday();
   const isAdmin = S.user?.role === 'admin';
 
-  // Show branded splash until auth resolves — prevents flash of wrong theme/skeleton
+  // mounted guard — suppress splash during SSR to avoid hydration mismatch
+  const [mounted, setMounted] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
+    if (!mounted) return;
     if (S.user) {
       // Small delay so the fade-out animation completes
       const t = setTimeout(() => setSplashVisible(false), 320);
       return () => clearTimeout(t);
     }
-  }, [S.user]);
+  }, [S.user, mounted]);
 
   // Local toast (for tracker link notification)
   const [toastMsg, setToastMsg] = useState('');
@@ -253,12 +256,12 @@ export default function AppShell() {
   return (
     <>
       {/* ──────────────── SPLASH SCREEN (blocks flash of wrong theme/lang) ──────────────── */}
-      {splashVisible && (
+      {mounted && splashVisible && (
         <div className={`app-splash${S.user ? ' app-splash--out' : ''}`} aria-hidden="true">
           <div className="app-splash-inner">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="" width={64} height={64} className="app-splash-logo" />
-            <div className="app-splash-wordmark">قُبا</div>
+            <div className="app-splash-wordmark">Quba</div>
             <div className="app-splash-dots">
               <span /><span /><span />
             </div>
