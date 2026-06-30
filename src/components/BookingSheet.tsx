@@ -259,7 +259,7 @@ const CC = [
   { f: "🇿🇼", d: "+263", n: "Zimbabwe" },
 ];
 
-const SOURCES: BookingSource[] = ["direct", "airbnb", "booking", "gathern"];
+const PRESET_SOURCES = ["direct", "airbnb", "booking", "gathern"];
 const SETOPTS: Array<"empty" | "cleaning" | "maintenance"> = [
   "empty",
   "cleaning",
@@ -1015,14 +1015,14 @@ export default function BookingSheet() {
   const showRoomDetails = isAdmin && openFrom === "rooms" && !editing;
 
   // ---- Source color helper ----
-  function srcColor(source: BookingSource): string {
-    const map: Record<BookingSource, string> = {
+  function srcColor(source: string): string {
+    const map: Record<string, string> = {
       direct: "var(--gold)",
       airbnb: "var(--checkout)",
       booking: "var(--info)",
       gathern: "var(--free)",
     };
-    return map[source] ?? "var(--faint)";
+    return map[source] ?? "var(--cleaning)";
   }
 
   // ---------------------------------------------------------------------------
@@ -1241,11 +1241,11 @@ export default function BookingSheet() {
                 </div>
               </div>
 
-              {/* Source chips */}
+              {/* Source chips + custom */}
               <div className="field">
                 <label>{tl("source")}</label>
                 <div className="srcchips">
-                  {SOURCES.map((s) => (
+                  {PRESET_SOURCES.map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -1255,7 +1255,25 @@ export default function BookingSheet() {
                       {tl("src_" + s)}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    className={`srcchip${!PRESET_SOURCES.includes(form.source) ? " on" : ""}`}
+                    onClick={() => updateField({ source: "" })}
+                  >
+                    {tl("src_other")}
+                  </button>
                 </div>
+                {!PRESET_SOURCES.includes(form.source) && (
+                  <input
+                    type="text"
+                    className="src-custom-input"
+                    placeholder={tl("src_custom_ph")}
+                    value={form.source}
+                    onChange={e => updateField({ source: e.target.value })}
+                    autoComplete="off"
+                    style={{ marginTop: 8 }}
+                  />
+                )}
               </div>
 
               {/* Amount */}

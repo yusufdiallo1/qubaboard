@@ -34,7 +34,7 @@ import { saveSettings } from '@/lib/supabaseActions';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TOTAL_ROOMS = 20;
-const SOURCES: BookingSource[] = ['direct', 'airbnb', 'booking', 'gathern'];
+const PRESET_SOURCES = ['direct', 'airbnb', 'booking', 'gathern'];
 
 // Fixed hex values — CSS vars don't work in SVG fill/stroke attributes
 const SCOLOR_HEX: Record<RoomStatus, string> = {
@@ -51,18 +51,17 @@ const SCOLOR: Record<RoomStatus, string> = {
   cleaning:    'var(--cleaning)',
   maintenance: 'var(--maint)',
 };
-const SRCCOLOR: Record<BookingSource, string> = {
-  direct:  'var(--gold)',
-  airbnb:  'var(--checkout)',
-  booking: 'var(--info)',
-  gathern: 'var(--free)',
-};
-const SRCCOLOR_HEX: Record<BookingSource, string> = {
-  direct:  '#C6A253',
-  airbnb:  '#E0823C',
-  booking: '#5B8DD9',
-  gathern: '#2FA36B',
-};
+// Dynamic palette for arbitrary source strings
+const SRC_PALETTE_HEX = ['#C6A253','#E0823C','#5B8DD9','#2FA36B','#7C6BB0','#CC4B4B','#2BC0B4','#E8A838'];
+const SRC_PALETTE_CSS = ['var(--gold)','var(--checkout)','var(--info)','var(--free)','var(--cleaning)','var(--maint)','#2BC0B4','#E8A838'];
+function srcColorHex(src: string, idx: number): string {
+  const map: Record<string, string> = { direct:'#C6A253', airbnb:'#E0823C', booking:'#5B8DD9', gathern:'#2FA36B' };
+  return map[src] ?? SRC_PALETTE_HEX[idx % SRC_PALETTE_HEX.length];
+}
+function srcColorCss(src: string, idx: number): string {
+  const map: Record<string, string> = { direct:'var(--gold)', airbnb:'var(--checkout)', booking:'var(--info)', gathern:'var(--free)' };
+  return map[src] ?? SRC_PALETTE_CSS[idx % SRC_PALETTE_CSS.length];
+}
 
 type RangeOption = 7 | 14 | 30;
 type OccFilter = 'alltime' | 'current' | 'last7' | 'lastmonth';
@@ -670,15 +669,20 @@ export default function OverviewScreen() {
     { v: counts.empty     || 0, c: 'var(--free)',    chex: '#2FA36B', label: tl.empty },
   ];
 
-  const srcCounts: Record<BookingSource, number> = { direct: 0, airbnb: 0, booking: 0, gathern: 0 };
-  bookings.forEach(b => { const s = (b.source || 'direct') as BookingSource; srcCounts[s]++; });
+  // Dynamic source counts — supports any string source
+  const srcCounts: Record<string, number> = {};
+  bookings.forEach(b => {
+    const s = (b.source || 'direct').trim() || 'direct';
+    srcCounts[s] = (srcCounts[s] || 0) + 1;
+  });
   const totalBookings = bookings.length;
-
-  const srcSegs: DonutSeg[] = SOURCES.map(sx => ({
-    v: srcCounts[sx],
-    c: SRCCOLOR[sx],
-    chex: SRCCOLOR_HEX[sx],
-    label: tl[`src_${sx}` as keyof typeof tl] as string,
+  // Sort by count desc, then build segs
+  const srcEntries = Object.entries(srcCounts).sort((a, b) => b[1] - a[1]);
+  const srcSegs: DonutSeg[] = srcEntries.map(([sx, count], idx) => ({
+    v: count,
+    c: srcColorCss(sx, idx),
+    chex: srcColorHex(sx, idx),
+    label: (tl[`src_${sx}` as keyof typeof tl] as string) || sx,
   }));
 
   // ── Floor perf ────────────────────────────────────────────────────────────
@@ -841,18 +845,23 @@ export default function OverviewScreen() {
           </div>
         </div>
         <div className="panel">
-          <h3>{tl.sourcesTitle}</h3>
+          <h3>{tl.channelMixTitle ?? (lang === 'ar' ? 'مصادر الحجوزات' : 'Booking Sources')}</h3>
           <div className="donut-wrap">
             <DonutChart segs={srcSegs} centerTop={String(totalBookings)} centerBot={tl.histBookings}
               onTip={showTip} onTipHide={hideTip} />
             <div className="dlegend">
-              {SOURCES.map(sx => (
+              {srcEntries.map(([sx, count], idx) => (
                 <div key={sx} className="li">
-                  <span className="dot" style={{ '--c': SRCCOLOR[sx] } as React.CSSProperties} />
-                  {tl[`src_${sx}` as keyof typeof tl] as string}
-                  <span className="lv">{srcCounts[sx]}</span>
+                  <span className="dot" style={{ '--c': srcColorCss(sx, idx) } as React.CSSProperties} />
+                  {(tl[`src_${sx}` as keyof typeof tl] as string) || sx}
+                  <span className="lv">{count}</span>
                 </div>
               ))}
+              {srcEntries.length === 0 && (
+                <div className="li" style={{ color: 'var(--faint)', fontSize: 12 }}>
+                  {lang === 'ar' ? 'لا توجد حجوزات بعد' : 'No bookings yet'}
+                </div>
+              )}
             </div>
           </div>
         </div>

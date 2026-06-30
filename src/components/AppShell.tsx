@@ -22,6 +22,8 @@ import TimelineScreen from '@/app/timeline/TimelineScreen';
 import OverviewScreen from '@/app/overview/OverviewScreen';
 import RoomsScreen    from '@/app/rooms/RoomsScreen';
 import EmployeesScreen from '@/app/employees/EmployeesScreen';
+import VillaScreen    from '@/app/villa/VillaScreen';
+import AptScreen      from '@/app/apt/AptScreen';
 import BookingSheet   from '@/components/BookingSheet';
 import ToastStack     from '@/components/ToastStack';
 import CommandPalette from '@/components/CommandPalette';
@@ -104,14 +106,28 @@ const I = {
       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  villa: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 22V10L12 3l10 7v12H2z" />
+      <path d="M9 22v-7h6v7" />
+      <path d="M5 22v-5h3v5M16 22v-5h3v5" />
+    </svg>
+  ),
+  apt: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="19" rx="2" />
+      <path d="M2 9h20" />
+      <path d="M9 3v18M15 3v18" />
+    </svg>
+  ),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Nav item definition
 // ─────────────────────────────────────────────────────────────────────────────
 type NavDef = {
-  id: 'board' | 'timeline' | 'overview' | 'rooms' | 'employees';
-  labelKey: 'nav_board' | 'nav_timeline' | 'nav_overview' | 'nav_rooms' | 'nav_employees';
+  id: 'board' | 'timeline' | 'overview' | 'rooms' | 'employees' | 'villa' | 'apt';
+  labelKey: 'nav_board' | 'nav_timeline' | 'nav_overview' | 'nav_rooms' | 'nav_employees' | 'nav_villa' | 'nav_apt';
   icon: React.ReactNode;
   adminOnly?: boolean;
 };
@@ -143,6 +159,8 @@ const NAV_ITEMS: NavDef[] = [
   { id: 'board',     labelKey: 'nav_board',     icon: I.board },
   { id: 'timeline',  labelKey: 'nav_timeline',   icon: I.timeline },
   { id: 'overview',  labelKey: 'nav_overview',   icon: I.chart },
+  { id: 'villa',     labelKey: 'nav_villa',      icon: I.villa },
+  { id: 'apt',       labelKey: 'nav_apt',        icon: I.apt },
   { id: 'rooms',     labelKey: 'nav_rooms',      icon: I.rooms,     adminOnly: true },
   { id: 'employees', labelKey: 'nav_employees',  icon: I.users,     adminOnly: true },
 ];
@@ -247,6 +265,8 @@ export default function AppShell() {
       case 'board':     return <BoardScreen />;
       case 'timeline':  return <TimelineScreen />;
       case 'overview':  return <OverviewScreen />;
+      case 'villa':     return <VillaScreen />;
+      case 'apt':       return <AptScreen />;
       case 'rooms':     return isAdmin ? <RoomsScreen /> : <BoardScreen />;
       case 'employees': return isAdmin ? <EmployeesScreen /> : <BoardScreen />;
       default:          return <BoardScreen />;
@@ -420,6 +440,21 @@ export default function AppShell() {
           </ScreenErrorBoundary>
         </main>
       </div>
+
+      {/* ──────────────── MOBILE BOTTOM TAB BAR ──────────────── */}
+      <nav className="bottomnav" aria-label="Bottom navigation">
+        {visibleNav.map(n => (
+          <button
+            key={n.id}
+            className={`btab${S.page === n.id ? ' on' : ''}`}
+            onClick={() => handleNav(n.id)}
+            aria-label={t(n.labelKey)}
+          >
+            <span className="btab-icon">{n.icon}</span>
+            <span className="btab-label">{t(n.labelKey)}</span>
+          </button>
+        ))}
+      </nav>
 
       {/* ──────────────── BOOKING SHEET ──────────────── */}
       {S.open !== null && <BookingSheet />}

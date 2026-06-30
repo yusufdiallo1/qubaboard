@@ -221,7 +221,7 @@ export default function BoardScreen() {
 
     return (
       <button
-        className={'tile' + (hasPhoto ? ' has-photo' : '')}
+        className={`tile st-${ds}${hasPhoto ? ' has-photo' : ''}`}
         onClick={() => openSheet(r.no)}
         style={{ '--sc': color } as React.CSSProperties}
         aria-label={`${t('roomWord')} ${r.no}`}
