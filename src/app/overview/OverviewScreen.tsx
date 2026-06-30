@@ -752,16 +752,16 @@ export default function OverviewScreen() {
       )}
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-        <div className="page-h stagger" style={{ marginBottom: 0 }}>{tl.overviewTitle}</div>
+      <div className="ov-header">
+        <div className="page-h stagger">{tl.overviewTitle}</div>
         <RangeSwitcher range={range} onChange={setRange} />
-        <div style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="ov-filter-group">
           <span className="occ-filter-label">{lang === 'ar' ? 'الإشغال:' : 'Occupancy:'}</span>
           <select
             value={occFilter}
             onChange={e => setOccFilter(e.target.value as OccFilter)}
             className="occ-select"
-            dir="ltr"
+            dir={lang === 'ar' ? 'rtl' : 'ltr'}
           >
             {OCC_FILTERS.map(f => (
               <option key={f.key} value={f.key}>{lang === 'ar' ? f.ar : f.en}</option>
@@ -926,24 +926,20 @@ export default function OverviewScreen() {
         <div className="panel">
           <h3>{lang === 'ar' ? 'غرف تحتاج اهتمام' : 'Rooms needing attention'}</h3>
           {attentionRooms.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--faint)', margin: '12px 0' }}>
+            <p className="attn-empty">
               {lang === 'ar' ? 'لا توجد غرف تحتاج اهتمام' : 'All rooms are in good shape'}
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+            <div className="attn-list">
               {attentionRooms.map(({ r, st }) => (
-                <div key={r.no} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{
-                    width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center',
-                    background: st === 'maintenance' ? '#CC4B4B22' : '#7C6BB022',
-                    color: st === 'maintenance' ? '#CC4B4B' : '#7C6BB0', flexShrink: 0,
-                  }}>
+                <div key={r.no} className="attn-row">
+                  <span className={`attn-icon ${st === 'maintenance' ? 'maint' : 'clean'}`}>
                     {st === 'maintenance' ? Icons.wrench : Icons.broom}
                   </span>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>
+                  <span className="attn-name">
                     {lang === 'ar' ? 'غرفة' : 'Room'} {r.no}
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--faint)', marginInlineStart: 'auto' }}>
+                  <span className="attn-status">
                     {tl[st as keyof typeof tl] as string}
                   </span>
                 </div>
@@ -955,16 +951,16 @@ export default function OverviewScreen() {
         {/* Busiest upcoming 7 days */}
         <div className="panel">
           <h3>{lang === 'ar' ? 'أكثر الأيام إشغالاً (7 أيام)' : 'Busiest upcoming days (7d)'}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 8 }}>
+          <div className="busy-list">
             {next7.map(({ day, label, occ, pct }) => (
               <div key={day} className="bk-row"
                 onMouseEnter={e => showTip(`${label}: ${pct}%`, e)}
                 onMouseMove={moveTip} onMouseLeave={hideTip}>
-                <span className="bl" style={{ minWidth: 90, fontSize: 12.5 }}>{label}</span>
+                <span className="bl">{label}</span>
                 <span className="bt">
-                  <i style={{ width: `${pct}%`, background: '#c6a253', display: 'block', height: '100%', borderRadius: 99, transition: 'width .6s' }} />
+                  <i className="busy-bar-fill" style={{ width: `${pct}%` }} />
                 </span>
-                <span className="bv" style={{ minWidth: 32 }}>{occ}</span>
+                <span className="bv">{occ}</span>
               </div>
             ))}
           </div>

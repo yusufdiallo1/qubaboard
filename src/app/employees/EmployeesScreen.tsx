@@ -304,11 +304,11 @@ export default function EmployeesScreen() {
               {/* Remove button — hidden for self and seed accounts */}
               {!isSelf && !isSeed && (
                 confirmRemoveId === emp.id ? (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn soft" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => setConfirmRemoveId(null)}>
+                  <div className="emp-confirm-row">
+                    <button className="btn soft" onClick={() => setConfirmRemoveId(null)}>
                       {tx.cancel as string}
                     </button>
-                    <button className="btn danger" style={{ padding: '4px 10px', fontSize: 12 }} disabled={isRemoving} onClick={() => { setConfirmRemoveId(null); handleRemove(emp.id); }}>
+                    <button className="btn danger" disabled={isRemoving} onClick={() => { setConfirmRemoveId(null); handleRemove(emp.id); }}>
                       {tx.remove as string}
                     </button>
                   </div>
@@ -441,40 +441,37 @@ export default function EmployeesScreen() {
       </div>
 
       {/* ── Audit log (admin only) ── */}
-      <div className="emp-add" style={{ marginTop: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: auditOpen ? 14 : 0 }}>
-          <h3 style={{ margin: 0 }}>{lang === 'ar' ? 'سجل التدقيق' : 'Audit Log'}</h3>
-          <button className="btn soft" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setAuditOpen(v => !v)}>
+      <div className="emp-add audit-section">
+        <div className={`audit-header${auditOpen ? ' open' : ''}`}>
+          <h3>{lang === 'ar' ? 'سجل التدقيق' : 'Audit Log'}</h3>
+          <button className="btn soft audit-toggle" onClick={() => setAuditOpen(v => !v)}>
             {auditOpen ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
           </button>
         </div>
         {auditOpen && (
           auditLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.5, fontSize: 13 }}>…</div>
+            <div className="audit-loading">…</div>
           ) : auditLog.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px 0', opacity: 0.4, fontSize: 13 }}>
+            <div className="audit-empty">
               {lang === 'ar' ? 'لا توجد إدخالات بعد' : 'No entries yet'}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="audit-list">
               {auditLog.map(entry => (
-                <div key={entry.id} style={{
-                  background: 'var(--surface-2)', borderRadius: 12, padding: '10px 14px',
-                  fontSize: 12.5, display: 'flex', flexDirection: 'column', gap: 3,
-                }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--text)' }}>{entry.actor_name}</span>
-                    <span style={{ color: 'var(--gold-deep)', fontWeight: 700 }}>
+                <div key={entry.id} className="audit-entry">
+                  <div className="audit-entry-row">
+                    <span className="audit-actor">{entry.actor_name}</span>
+                    <span className="audit-action">
                       {entry.action === 'role_change'
                         ? `${lang === 'ar' ? 'غيّر الدور' : 'changed role'}: ${entry.old_value} → ${entry.new_value}`
                         : entry.action}
                     </span>
-                    {entry.target_name && <span style={{ color: 'var(--dim)' }}>{lang === 'ar' ? 'لـ' : 'for'} <b>{entry.target_name}</b></span>}
-                    <span style={{ marginInlineStart: 'auto', color: 'var(--faint)', fontSize: 11 }}>
+                    {entry.target_name && <span className="audit-target">{lang === 'ar' ? 'لـ' : 'for'} <b>{entry.target_name}</b></span>}
+                    <span className="audit-time">
                       {new Date(entry.created_at).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                     </span>
                   </div>
-                  {entry.ip && <span style={{ color: 'var(--faint)', fontSize: 11 }}>IP: {entry.ip}</span>}
+                  {entry.ip && <span className="audit-ip">IP: {entry.ip}</span>}
                 </div>
               ))}
             </div>
