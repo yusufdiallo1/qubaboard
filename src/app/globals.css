@@ -64,7 +64,7 @@ input,select{font-family:inherit}
 .login-foot .st{color:var(--gold)}
 
 .topbar{position:sticky;top:0;z-index:100;
-  padding:calc(env(safe-area-inset-top) + 10px) clamp(14px,2.5vw,24px) 10px;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 10px) clamp(16px,4vw,28px) 10px;display:flex;align-items:center;gap:10px;
   background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-sheen),0 1px 0 var(--line);}
 .brand{display:flex;align-items:center;gap:11px;min-width:0;background:none;border:none;padding:0;cursor:pointer}
@@ -1022,7 +1022,7 @@ input,select,textarea{font-size:max(16px,1em)}
   /* overview panels: single col */
   .panels{grid-template-columns:1fr;gap:10px}
   /* topbar compactness */
-  .topbar{padding:calc(env(safe-area-inset-top)+8px) 14px 8px;gap:8px}
+  .topbar{padding:calc(env(safe-area-inset-top)+8px) 16px 8px;gap:8px}
   .brand img{width:28px;height:28px}
   .datepill{display:none}
   .pchip .pinfo{display:none}
