@@ -93,6 +93,7 @@ export default function EmployeesScreen() {
   const tx = T[lang];
 
   // ── Add-employee form state ──
+  const [addOpen, setAddOpen] = useState(false);
   const [eName, setEName] = useState('');
   const [eUser, setEUser] = useState('');
   const [eRole, setERole] = useState<'staff' | 'admin'>('staff');
@@ -118,6 +119,7 @@ export default function EmployeesScreen() {
   }>>([]);
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -228,8 +230,10 @@ export default function EmployeesScreen() {
   // ── Load audit log ──
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
-    const { data } = await getAuditLog();
-    setAuditLog(data ?? []);
+    setAuditError(null);
+    const { data, error } = await getAuditLog();
+    if (error) setAuditError(error);
+    else setAuditLog(data ?? []);
     setAuditLoading(false);
   }, []);
 
@@ -342,9 +346,20 @@ export default function EmployeesScreen() {
         )}
       </div>
 
-      {/* ── Add employee form ── */}
+      {/* ── Add employee form (collapsible) ── */}
       <div className="emp-add">
-        <h3>{tx.addEmployee as string}</h3>
+        <button
+          className="emp-add-toggle"
+          onClick={() => { setAddOpen(v => !v); setEmpError(''); }}
+          aria-expanded={addOpen}
+        >
+          <span>{tx.addEmployee as string}</span>
+          <span className={`emp-add-chev${addOpen ? ' open' : ''}`}>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="5 8 10 13 15 8" /></svg>
+          </span>
+        </button>
+
+        {addOpen && (<div className="emp-add-body">
 
         {/* Name */}
         <div className="field">
@@ -438,6 +453,7 @@ export default function EmployeesScreen() {
           <UsersIcon />
           {adding ? '…' : (tx.add as string)}
         </button>
+        </div>)}
       </div>
 
       {/* ── Audit log (admin only) ── */}
@@ -451,6 +467,8 @@ export default function EmployeesScreen() {
         {auditOpen && (
           auditLoading ? (
             <div className="audit-loading">…</div>
+          ) : auditError ? (
+            <div className="audit-empty" style={{ color: 'var(--maint)' }}>{auditError}</div>
           ) : auditLog.length === 0 ? (
             <div className="audit-empty">
               {lang === 'ar' ? 'لا توجد إدخالات بعد' : 'No entries yet'}
