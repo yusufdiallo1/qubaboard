@@ -147,15 +147,13 @@ function TimelineView() {
   return (
     <div>
       <div className="tl-top">
+        <button className="tl-todaybtn tl-today-standalone" onClick={handleToday}>{t.today}</button>
         <div className="tl-nav">
           <button className="tl-navbtn" onClick={handlePrev} aria-label="Previous">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {isRtl ? <polyline points="8 5 13 10 8 15"/> : <polyline points="12 5 7 10 12 15"/>}
             </svg>
           </button>
-          <div className="tl-nav-div"/>
-          <button className="tl-todaybtn" onClick={handleToday}>{t.today}</button>
-          <div className="tl-nav-div"/>
           <button className="tl-navbtn" onClick={handleNext} aria-label="Next">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {isRtl ? <polyline points="12 5 7 10 12 15"/> : <polyline points="8 5 13 10 8 15"/>}
@@ -302,6 +300,11 @@ function MonthView() {
   const occPct = (iso: string) => Math.round(occOnDate(bookings, iso) / TOTAL_ROOMS * 100);
 
   return (
+    <div>
+      {/* Today + hint row above the calendar card */}
+      <div className="cal-top-row">
+        <button className="tl-todaybtn tl-today-standalone" onClick={handleToday}>{t.today}</button>
+      </div>
     <div className="cal-wrap">
       {/* Nav */}
       <div className="cal-nav">
@@ -310,7 +313,6 @@ function MonthView() {
             {isRtl ? <polyline points="8 5 13 10 8 15"/> : <polyline points="12 5 7 10 12 15"/>}
           </svg>
         </button>
-        <button className="tl-todaybtn cal-today-btn" onClick={handleToday}>{t.today}</button>
         <h2 className="cal-month-title">{rangeLabel}</h2>
         <button className="tl-navbtn" onClick={handleNext} aria-label="Next month">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -408,6 +410,7 @@ function MonthView() {
         <span className="cal-leg-item"><i style={{ background: "#C6A253" }}/>{lang === "ar" ? "قادم" : "Upcoming"}</span>
         <span className="cal-leg-item"><i style={{ background: "#3a8fe0" }}/>{lang === "ar" ? "مغادرة" : "Checkout"}</span>
       </div>
+    </div>
     </div>
   );
 }

@@ -143,7 +143,7 @@ export const initialState: AppState = {
   tlStart: 0,
   tlMonthOffset: 0,
   tlChunk: 0, // will be overridden by getSeed() based on today's date
-  calView: 'timeline',
+  calView: 'month',
   calMonthOffset: 0,
 
   // Maintenance
