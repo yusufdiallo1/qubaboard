@@ -588,6 +588,86 @@ input,select{font-family:inherit}
   .mc-occ .mn{font-size:10px}
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALENDAR — Apple Calendar style month view + header row
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Page header row: title + toggle inline */
+.cal-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px}
+
+/* Month view wrapper */
+.cal-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--glass-sheen),var(--shadow);overflow:hidden}
+
+/* Nav: ‹ Today  Month Year › */
+.cal-nav{display:flex;align-items:center;gap:0;padding:10px 12px 8px;border-bottom:1px solid var(--line-soft)}
+.cal-month-title{flex:1;text-align:center;font-size:17px;font-weight:800;letter-spacing:-.01em;margin:0}
+.cal-today-btn{font-size:13.5px;font-weight:700;color:var(--gold);padding:0 10px;height:40px;background:none;border:none;cursor:pointer;white-space:nowrap}
+.cal-today-btn:hover{opacity:.75}
+
+/* Weekday header */
+.cal-wdrow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface-2);border-bottom:1px solid var(--line)}
+.cal-wd{padding:9px 2px;text-align:center;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+
+/* Day grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{
+  position:relative;min-height:100px;
+  border-inline-start:1px solid var(--line-soft);border-top:1px solid var(--line-soft);
+  display:flex;flex-direction:column;padding:8px 7px 7px;gap:3px;
+  cursor:pointer;transition:background .12s;
+}
+.cal-cell:nth-child(7n+1){border-inline-start:none}
+.cal-blank{background:color-mix(in srgb,var(--text) 2%,transparent);pointer-events:none;cursor:default}
+.cal-cell:not(.cal-blank):hover{background:color-mix(in srgb,var(--gold) 8%,transparent)}
+.cal-cell.past{opacity:.5}
+.cal-cell.today{background:color-mix(in srgb,var(--gold) 6%,transparent)}
+
+/* Day number row */
+.cal-dn-row{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.cal-dn{
+  font-size:14px;font-weight:800;line-height:1;
+  width:26px;height:26px;display:grid;place-items:center;border-radius:50%;flex-shrink:0;
+}
+.cal-cell.today .cal-dn{background:var(--navy);color:#fff}
+[data-theme="dark"] .cal-cell.today .cal-dn{background:var(--gold);color:#1b1407}
+.cal-adflags{display:flex;gap:5px;font-size:10px;font-weight:800;margin-inline-start:auto}
+.cal-adflags .arr{color:var(--free)}
+.cal-adflags .dep{color:var(--checkout)}
+
+/* Guest pills */
+.cal-pills{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1}
+.cal-pill{
+  font-size:9.5px;font-weight:700;
+  padding:1px 5px;border-radius:4px;border:1px solid;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  line-height:1.5;
+}
+.cal-pill-more{font-size:9px;font-weight:700;color:var(--faint);padding-inline-start:2px}
+
+/* Occupancy bar — sits at the bottom */
+.cal-occ-bar{display:flex;align-items:center;gap:5px;margin-top:auto}
+.cal-occ-track{flex:1;height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.cal-occ-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--booked),var(--gold-deep));transition:width .3s}
+.cal-occ-pct{font-size:9.5px;font-weight:800;color:var(--gold-deep);min-width:22px;text-align:end}
+
+/* Legend */
+.cal-legend{display:flex;align-items:center;gap:14px;padding:10px 14px;border-top:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
+.cal-leg-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--dim)}
+.cal-leg-item i{width:10px;height:10px;border-radius:3px;display:block;flex-shrink:0}
+
+/* Mobile */
+@media(max-width:560px){
+  .cal-header-row{gap:8px;margin-bottom:14px}
+  .cal-cell{min-height:68px;padding:5px 4px 4px;gap:2px}
+  .cal-dn{font-size:12px;width:22px;height:22px}
+  .cal-wd{font-size:10px;padding:7px 1px}
+  .cal-pill{font-size:8.5px}
+  .cal-occ-pct{font-size:8.5px}
+  .cal-legend{padding:8px 10px;gap:10px}
+  .cal-leg-item{font-size:11px}
+  .cal-month-title{font-size:15px}
+}
+
 .backdrop{position:fixed;inset:0;z-index:90;background:rgba(10,14,24,.52);backdrop-filter:blur(8px) saturate(140%);
   -webkit-backdrop-filter:blur(8px) saturate(140%);display:flex;align-items:center;justify-content:center;padding:16px}
 .backdrop.in{animation:fadeBack .32s cubic-bezier(.2,.8,.25,1) both}
