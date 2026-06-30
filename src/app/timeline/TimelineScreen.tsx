@@ -7,15 +7,8 @@ import {
   weekdayOf,
   monthFirst,
   shiftMonth,
-  occOnDate,
 } from "@/lib/helpers";
 import { T } from "@/lib/i18n";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const TOTAL_ROOMS = 20;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -83,8 +76,17 @@ function MonthView() {
   function getDayStats(iso: string) {
     const arrivals = bookings.filter((b) => !b.checked_out && b.check_in === iso).length;
     const departures = bookings.filter((b) => !b.checked_out && b.check_out === iso).length;
-    const occ = occOnDate(bookings, iso);
-    return { arrivals, departures, occ };
+    return { arrivals, departures };
+  }
+
+  function getBookingsOnDate(iso: string) {
+    return bookings.filter((b) => {
+      if (b.checked_out) return false;
+      // checkout day
+      if (b.check_out === iso) return true;
+      // active stay (check_in <= iso < check_out)
+      return b.check_in <= iso && b.check_out > iso;
+    });
   }
 
   return (
@@ -132,8 +134,8 @@ function MonthView() {
             const { iso, dn } = cell;
             const isToday = iso === today;
             const isPast = iso < today;
-            const { arrivals, departures, occ } = getDayStats(iso);
-            const occPct = Math.round((occ / TOTAL_ROOMS) * 100);
+            const { arrivals, departures } = getDayStats(iso);
+            const dayBookings = getBookingsOnDate(iso);
 
             let cls = "mc-cell";
             if (isToday) cls += " today";
@@ -153,23 +155,31 @@ function MonthView() {
               >
                 <div className="mc-top">
                   <span className="mc-dn">{dn}</span>
+                  {(arrivals > 0 || departures > 0) && (
+                    <div className="mc-flags" style={{ marginInlineStart: 'auto' }}>
+                      {arrivals > 0 && <span className="arr">+{arrivals}</span>}
+                      {departures > 0 && <span className="dep">-{departures}</span>}
+                    </div>
+                  )}
                 </div>
 
-                {(arrivals > 0 || departures > 0) && (
-                  <div className="mc-flags">
-                    {arrivals > 0 && <span className="arr">+{arrivals}</span>}
-                    {departures > 0 && <span className="dep">-{departures}</span>}
-                  </div>
-                )}
-
-                {occ > 0 && (
-                  <div className="mc-occ">
-                    <div className="mb">
-                      <i style={{ width: `${occPct}%` }} />
-                    </div>
-                    <span className="mn">{occ}</span>
-                  </div>
-                )}
+                {/* Guest booking pills */}
+                <div className="mc-bookings">
+                  {dayBookings.slice(0, 3).map(b => {
+                    const isCheckout = b.check_out === iso;
+                    const isFuture = b.check_in > today;
+                    const color = isCheckout ? '#3a8fe0' : isFuture ? '#C6A253' : '#e05454';
+                    return (
+                      <div key={b.id} className="mc-pill" style={{ background: color + '22', borderColor: color, color }}>
+                        <span className="mc-pill-name">{b.guest_name.split(' ')[0]}</span>
+                        <span className="mc-pill-rm">R{b.room_no}</span>
+                      </div>
+                    );
+                  })}
+                  {dayBookings.length > 3 && (
+                    <div className="mc-pill-more">+{dayBookings.length - 3}</div>
+                  )}
+                </div>
               </div>
             );
           })}

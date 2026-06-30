@@ -441,21 +441,6 @@ export default function AppShell() {
         </main>
       </div>
 
-      {/* ──────────────── MOBILE BOTTOM TAB BAR ──────────────── */}
-      <nav className="bottomnav" aria-label="Bottom navigation">
-        {visibleNav.map(n => (
-          <button
-            key={n.id}
-            className={`btab${S.page === n.id ? ' on' : ''}`}
-            onClick={() => handleNav(n.id)}
-            aria-label={t(n.labelKey)}
-          >
-            <span className="btab-icon">{n.icon}</span>
-            <span className="btab-label">{t(n.labelKey)}</span>
-          </button>
-        ))}
-      </nav>
-
       {/* ──────────────── BOOKING SHEET ──────────────── */}
       {S.open !== null && <BookingSheet />}
 
