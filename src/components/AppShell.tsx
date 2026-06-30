@@ -271,6 +271,16 @@ export default function AppShell() {
 
       {/* ──────────────── TOPBAR ──────────────── */}
       <header className="topbar">
+        {/* Hamburger — mobile only, LEFT side before brand */}
+        <button
+          className="iconbtn hamburger"
+          onClick={() => dispatch({ type: 'SET_DRAWER_OPEN', payload: !S.drawerOpen })}
+          aria-label="Menu"
+          data-act="toggle-drawer"
+        >
+          {I.hamburger}
+        </button>
+
         {/* Brand */}
         <button
           className="brand"
@@ -309,16 +319,6 @@ export default function AppShell() {
             }}
           />
         </div>
-
-        {/* Hamburger (mobile only) */}
-        <button
-          className="iconbtn hamburger"
-          onClick={() => dispatch({ type: 'SET_DRAWER_OPEN', payload: !S.drawerOpen })}
-          aria-label="Menu"
-          data-act="toggle-drawer"
-        >
-          {I.hamburger}
-        </button>
 
         {/* Profile chip */}
         <div className="pwrap" ref={menuRef}>
