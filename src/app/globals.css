@@ -64,7 +64,7 @@ input,select{font-family:inherit}
 .login-foot .st{color:var(--gold)}
 
 .topbar{position:sticky;top:0;z-index:100;
-  padding:calc(env(safe-area-inset-top) + 10px) clamp(16px,4vw,28px) 10px;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 10px) clamp(16px,5vw,32px) 10px;display:flex;align-items:center;gap:10px;
   background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-sheen),0 1px 0 var(--line);}
 .brand{display:flex;align-items:center;gap:11px;min-width:0;background:none;border:none;padding:0;cursor:pointer}
@@ -93,7 +93,7 @@ input,select{font-family:inherit}
 .pchip .pr{font-size:10.5px;color:var(--faint);font-weight:600}
 
 /* ── Desktop layout: sidenav fixed to the left/right viewport edge ── */
-.layout{display:flex;width:100%;min-height:calc(100dvh - 58px)}
+.layout{display:flex;width:100%;min-height:calc(100dvh - 58px);align-items:flex-start}
 .sidenav{
   width:220px;flex:none;
   padding:16px 12px;
@@ -594,7 +594,7 @@ input,select{font-family:inherit}
 .sheet{background:var(--surface-solid);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-sheen),var(--shadow-deep);
   width:100%;max-width:480px;border-radius:24px;
-  max-height:calc(100dvh - 32px);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:82dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
   padding:8px 20px 28px}
 .sheet.in{animation:sheetUp .42s cubic-bezier(.16,.85,.25,1.02) both}
@@ -770,6 +770,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .datepill svg{width:13px;height:13px}
   .topbar{gap:9px}
   .brand img{width:30px;height:30px}
+  .sheet{margin:12px;width:calc(100% - 24px);border-radius:20px;padding:8px 14px 20px}
+  .backdrop{padding:12px}
+  .content{padding:12px 16px 80px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  .panels{grid-template-columns:1fr;gap:10px}
+  .panel{min-height:200px}
+  .pwrap{margin-inline-end:4px}
 }
 .login-card{
   background:var(--surface-solid);
@@ -1037,7 +1044,7 @@ input,select,textarea{font-size:max(16px,1em)}
   .tl-navbtn{width:36px;height:36px}
   .tl-todaybtn{height:36px;padding:0 2px;font-size:13px}
   /* sheet: floating modal on phone */
-  .sheet{max-height:calc(100dvh - 32px);border-radius:22px;padding:8px 16px 24px}
+  .sheet{max-height:82dvh;border-radius:22px;padding:8px 16px 24px}
   .backdrop{padding:16px}
   .frow{grid-template-columns:1fr}
   /* rooms grid */

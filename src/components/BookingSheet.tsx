@@ -520,7 +520,12 @@ export default function BookingSheet() {
   const today = localToday();
 
   // ---- Room & booking resolution ----
-  const room = rooms.find((r) => r.no === roomNo) ?? null;
+  // For virtual rooms (roomNo >= 21, e.g. Villa=21, Apt=22) that don't exist
+  // in the rooms table, create a minimal fallback object so the sheet renders.
+  const room = rooms.find((r) => r.no === roomNo) ??
+    (roomNo != null && roomNo >= 21
+      ? { no: roomNo, override: null, description: null, photo_url: null, issue: null }
+      : null) as (typeof rooms[0]) | null;
 
   const curBooking = roomNo != null ? currentBooking(roomNo, bookings, today) : null;
   const upcomingBk = roomNo != null ? upcomingBooking(roomNo, bookings, today) : null;
