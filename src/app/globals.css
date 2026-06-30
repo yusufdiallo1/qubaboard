@@ -171,7 +171,7 @@ input,select{font-family:inherit}
 .mitem .mi svg{width:15px;height:15px}
 .mitem .ct{margin-inline-start:auto;color:var(--dim);font-weight:700;font-size:13px}
 .mitem.on .ct{color:var(--gold-deep)}
-.pmenu{inset-inline-end:0;max-width:min(280px,90vw)}
+.pmenu{inset-inline-end:0;max-width:min(280px,calc(100vw - 32px));margin-inline-end:max(0px,env(safe-area-inset-right,0px))}
 .pmhead{display:flex;align-items:center;gap:11px;padding:8px 10px 12px;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
 .pmhead .av{width:38px;height:38px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
 [data-theme="dark"] .pmhead .av{background:var(--gold);color:#1b1407}
@@ -387,6 +387,9 @@ input,select{font-family:inherit}
 .prop-coming-icon{font-size:56px;line-height:1}
 .prop-coming-label{font-size:22px;font-weight:800;color:var(--gold-deep)}
 .prop-coming-desc{font-size:14px;color:var(--dim);line-height:1.6;max-width:320px}
+/* Property single-unit pages (Villa / Apt) */
+.prop-tile{width:100%;max-width:480px;display:block;margin-bottom:16px}
+.prop-add-btn{width:100%;max-width:480px;margin-bottom:24px}
 .audit-header{display:flex;align-items:center;justify-content:space-between}
 .audit-header h3{margin:0;font-size:15px;font-weight:700}
 .audit-header.open{margin-bottom:14px}
@@ -1024,6 +1027,7 @@ input,select,textarea{font-size:max(16px,1em)}
   .datepill{display:none}
   .pchip .pinfo{display:none}
   .pchip{padding-inline-end:8px}
+  .pmenu{inset-inline-end:0;right:0;margin-right:8px}
   /* timeline */
   .tl-scroll{border-radius:var(--radius-sm)}
   .tl-top{gap:8px;row-gap:8px}
