@@ -41,8 +41,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const l = localStorage.getItem("quba_lang") as Lang | null;
-    const t = localStorage.getItem("quba_theme") as Theme | null;
+    const l = localStorage.getItem("quba-lang") as Lang | null;
+    const t = localStorage.getItem("quba-theme") as Theme | null;
     if (l === "ar" || l === "en") {
       setLang(l);
     } else {
@@ -58,8 +58,8 @@ export default function LoginPage() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("quba_lang", lang);
-    localStorage.setItem("quba_theme", theme);
+    localStorage.setItem("quba-lang", lang);
+    localStorage.setItem("quba-theme", theme);
   }, [lang, theme, mounted]);
 
   const t = (k: keyof typeof T.ar) => T[lang][k];

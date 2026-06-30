@@ -12,7 +12,7 @@
   --bg:#F5F3EE; --surface:rgba(255,255,255,0.82); --surface-solid:#FFFFFF; --surface-2:rgba(237,233,223,0.72);
   --glass-bg:rgba(255,255,255,0.72); --glass-border:1px solid rgba(255,255,255,0.55);
   --line:rgba(20,22,34,.08); --line-soft:rgba(20,22,34,.04);
-  --text:#1b1d22; --dim:#5f6672; --faint:#9aa0aa; --info:#2B5FA5;
+  --text:#1b1d22; --dim:#5f6672; --faint:#9aa0aa; --muted:#9aa0aa; --info:#2B5FA5;
   --shadow:0 2px 8px rgba(20,22,34,.06), 0 8px 32px -8px rgba(20,22,34,.14), 0 0 0 1px rgba(255,255,255,.7) inset;
   --shadow-lift:0 4px 6px rgba(20,22,34,.04), 0 20px 60px -12px rgba(20,22,34,.28), 0 0 0 1px rgba(255,255,255,.8) inset;
   --shadow-deep:0 8px 12px rgba(20,22,34,.06), 0 32px 80px -16px rgba(20,22,34,.38), 0 0 0 1px rgba(255,255,255,.9) inset;
@@ -27,7 +27,7 @@
   --bg:#070b11; --surface:rgba(15,20,32,0.78); --surface-solid:#111722; --surface-2:rgba(20,28,44,0.75);
   --glass-bg:rgba(15,20,32,0.68); --glass-border:1px solid rgba(255,255,255,0.07);
   --line:rgba(255,255,255,.09); --line-soft:rgba(255,255,255,.04);
-  --text:#E8E6DE; --dim:#8a94a6; --faint:#5e6878; --info:#4f86d4;
+  --text:#E8E6DE; --dim:#8a94a6; --faint:#5e6878; --muted:#5e6878; --info:#4f86d4;
   --shadow:0 2px 8px rgba(0,0,0,.4), 0 12px 40px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06) inset;
   --shadow-lift:0 4px 8px rgba(0,0,0,.5), 0 24px 64px -16px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.07) inset;
   --shadow-deep:0 8px 16px rgba(0,0,0,.6), 0 40px 90px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.08) inset;
@@ -139,6 +139,7 @@ input,select{font-family:inherit}
   padding:12px 16px;padding-inline-start:40px;font-size:14.5px;color:var(--text);transition:border-color .2s,box-shadow .2s}
 .search input::placeholder{color:var(--faint)}
 .search input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(198,162,83,.13)}
+.calview{display:flex;align-items:center}
 .vtoggle{display:inline-flex;background:var(--surface-2);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:980px;padding:3px;gap:2px;flex:none}
 .vt{width:44px;height:44px;border-radius:980px;display:grid;place-items:center;color:var(--dim);transition:all .15s}
 .vt svg{width:17px;height:17px}
@@ -191,7 +192,6 @@ input,select{font-family:inherit}
   transition:transform .18s cubic-bezier(.2,.8,.25,1),box-shadow .22s;cursor:pointer;
   background-image:linear-gradient(160deg,var(--sc-tint-hi) 0%,var(--sc-tint-lo) 55%,transparent 100%)}
 .tile::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--sc);border-radius:0 3px 3px 0}
-.tile:hover{transform:translateY(-4px) scale(1.02);box-shadow:var(--glass-sheen),var(--shadow-lift),var(--sc-glow)}
 .tile:active{transform:translateY(-1px) scale(1)}
 /* per-status color variables */
 .tile.st-empty{--sc:var(--free);--sc-tint-hi:rgba(47,163,107,.18);--sc-tint-lo:rgba(47,163,107,.06);--sc-glow:0 0 22px rgba(47,163,107,.28)}
@@ -749,7 +749,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 [data-theme="dark"] .toast{background:var(--gold);color:#1b1407}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* ── Cards hover sheens ── */
-.tile:hover{transform:translateY(-4px) scale(1.02);box-shadow:var(--glass-sheen),var(--shadow-lift),var(--sc-glow,none)}
 .row:hover{box-shadow:var(--glass-sheen),var(--shadow-lift)}
 /* ── Mobile: show hamburger, hide sidenav ── */
 .hamburger{display:none}
@@ -905,9 +904,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .animate-fade-in-up{animation:rise .35s cubic-bezier(.2,.8,.25,1) both}
-@keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes checkpop{0%{opacity:0;transform:scale(.3)}60%{transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
-@keyframes sheetUp{from{opacity:0;transform:translateY(48px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes fadeBack{from{opacity:0;backdrop-filter:blur(0px)}to{opacity:1;backdrop-filter:blur(8px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -939,7 +936,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* ── Cards lift ── */
 .tile{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out),border-color var(--dur-m)}
-.tile:hover{transform:translateY(-2px)}
+.tile:hover{transform:translateY(-4px) scale(1.02);box-shadow:var(--glass-sheen),var(--shadow-lift),var(--sc-glow,none)}
 .tile-photo{transition:transform var(--dur-xl) var(--ease-out)}
 .tile:hover .tile-photo{transform:scale(1.04)}
 .row{transition:transform var(--dur-s) var(--ease-out),box-shadow var(--dur-m) var(--ease-out)}
@@ -1034,7 +1031,7 @@ input,select,textarea{font-size:max(16px,1em)}
   .datepill{display:none}
   .pchip .pinfo{display:none}
   .pchip{padding-inline-end:8px}
-  .pmenu{inset-inline-end:0;right:0;margin-right:8px}
+  .pmenu{inset-inline-end:0;margin-inline-end:8px}
   /* timeline */
   .tl-scroll{border-radius:var(--radius-sm)}
   .tl-top{gap:8px;row-gap:8px}

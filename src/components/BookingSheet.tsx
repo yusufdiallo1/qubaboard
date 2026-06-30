@@ -775,12 +775,11 @@ export default function BookingSheet() {
         showToast(result.error, "error");
         return;
       }
+      const bkToCheckout = bookings.find((b) => b.id === bookingId);
+      if (!bkToCheckout) { showToast("Booking not found", "error"); return; }
       dispatch({
         type: "UPSERT_BOOKING",
-        payload: {
-          ...(bookings.find((b) => b.id === bookingId) as Booking),
-          checked_out: true,
-        },
+        payload: { ...bkToCheckout, checked_out: true },
       });
       dispatch({
         type: "UPDATE_ROOM",

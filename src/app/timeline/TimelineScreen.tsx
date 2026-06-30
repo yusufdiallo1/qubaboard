@@ -378,9 +378,9 @@ function MonthView() {
                 {/* Occupancy mini-bar */}
                 <div className="mc-occ">
                   <div className="mb">
-                    <i style={{ width: `${occOnDate(bookings, iso)}%` }} />
+                    <i style={{ width: `${Math.round(occOnDate(bookings, iso) / TOTAL_ROOMS * 100)}%` }} />
                   </div>
-                  <span className="mn">{occOnDate(bookings, iso)}%</span>
+                  <span className="mn">{Math.round(occOnDate(bookings, iso) / TOTAL_ROOMS * 100)}%</span>
                 </div>
               </div>
             );
