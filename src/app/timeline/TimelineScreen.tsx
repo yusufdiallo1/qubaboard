@@ -104,7 +104,7 @@ function TimelineView() {
 
   function dayISO(d: number): string { return isoAdd(viewMonthFirst, d - 1); }
 
-  const colTemplate = `52px repeat(${N}, minmax(0, 1fr))`;
+  const colTemplate = `52px repeat(${N}, minmax(44px, 1fr))`;
   const rangeLabel = `${pageStart}–${pageEnd} ${t.months[viewM - 1]} ${viewY}`;
 
   const handleNext = useCallback(() => {

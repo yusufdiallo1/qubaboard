@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '@/lib/store';
 import { getT } from '@/lib/i18n';
 import { BoardSkeleton } from '@/components/Skeletons';
@@ -96,23 +96,9 @@ const FILTER_ORDER = [
 export default function BoardScreen() {
   const state = useAppState();
   const dispatch = useAppDispatch();
-  const { lang, view, filter, search, filterOpen, rooms, bookings, loading } = state;
+  const { lang, view, filter, search, rooms, bookings, loading } = state;
   const t = getT(lang);
   const today = localToday();
-
-  // Ref for the filter dropdown so we can close on outside click
-  const dropRef = useRef<HTMLDivElement>(null);
-
-  // Close filter dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
-        if (filterOpen) dispatch({ type: 'SET_FILTER_OPEN', payload: false });
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [filterOpen, dispatch]);
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -355,66 +341,6 @@ export default function BoardScreen() {
   }
 
   // ---------------------------------------------------------------------------
-  // Filter dropdown component
-  // ---------------------------------------------------------------------------
-  function FilterDropdown() {
-    const activeColor =
-      filter === 'all' || filter === 'arrivals' ? undefined : SCOLOR[filter];
-
-    return (
-      <div className="fdrop" ref={dropRef}>
-        <button
-          className={'fbtn' + (filterOpen ? ' open' : '')}
-          onClick={() => dispatch({ type: 'SET_FILTER_OPEN', payload: !filterOpen })}
-          aria-label="Filter rooms"
-          aria-expanded={filterOpen}
-        >
-          <span className="fi">{I.funnel}</span>
-          {activeColor && (
-            <span className="dot" style={{ '--c': activeColor } as React.CSSProperties} />
-          )}
-          <span>{t(filter as Parameters<typeof t>[0])}</span>
-          <span className="ct">{cnts[filter] ?? 0}</span>
-          <span className="chev">{I.chev}</span>
-        </button>
-
-        {filterOpen && (
-          <div className="menu fmenu">
-            {FILTER_ORDER.map(({ k, icon }) => {
-              const lead =
-                icon ? (
-                  <span className="mi">{I.arrive}</span>
-                ) : k === 'all' ? (
-                  <span className="mi">{I.grid}</span>
-                ) : (
-                  <span
-                    className="dot"
-                    style={{ '--c': SCOLOR[k] } as React.CSSProperties}
-                  />
-                );
-
-              return (
-                <button
-                  key={k}
-                  className={'mitem' + (filter === k ? ' on' : '')}
-                  onClick={() => {
-                    dispatch({ type: 'SET_FILTER', payload: k });
-                    dispatch({ type: 'SET_FILTER_OPEN', payload: false });
-                  }}
-                >
-                  {lead}
-                  {t(k as Parameters<typeof t>[0])}
-                  <span className="ct">{cnts[k] ?? 0}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
   return (
@@ -438,10 +364,8 @@ export default function BoardScreen() {
         </div>
       </div>
 
-      {/* Controls row */}
+      {/* Search + view toggle row */}
       <div className="ctrlrow">
-        <FilterDropdown />
-
         <div className="search">
           {I.search}
           <input
@@ -471,6 +395,28 @@ export default function BoardScreen() {
             {I.list}
           </button>
         </div>
+      </div>
+
+      {/* Filter chips — horizontal scroll strip, Apple/Resend style */}
+      <div className="fchips">
+        {FILTER_ORDER.map(({ k, icon }) => {
+          const isActive = filter === k;
+          const color = icon || k === 'all' ? undefined : SCOLOR[k];
+          return (
+            <button
+              key={k}
+              className={'fchip' + (isActive ? ' on' : '')}
+              style={color ? { '--fc': color } as React.CSSProperties : undefined}
+              onClick={() => dispatch({ type: 'SET_FILTER', payload: k })}
+            >
+              {color && <i className="fcdot" />}
+              {icon && <span className="fcicon">{I.arrive}</span>}
+              {k === 'all' && !color && !icon && <span className="fcicon">{I.grid}</span>}
+              <span>{t(k as Parameters<typeof t>[0])}</span>
+              <span className="fcct">{cnts[k] ?? 0}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Room grid or list */}
