@@ -478,8 +478,8 @@ input,select{font-family:inherit}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
 /* Timeline scroll container — no min-width; CSS grid fills the container */
-.tl-scroll{border-radius:var(--radius);background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:var(--glass-sheen),var(--shadow-lift);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
-.tl-headrow,.tl-row{min-width:360px} /* 52px room + 7×44px day = 360px minimum */
+.tl-scroll{border-radius:var(--radius);background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:var(--glass-sheen),var(--shadow-lift);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tl-headrow,.tl-row{min-width:360px}
 
 /* Floating glass pill — the date header row (CSS grid; columns set inline) */
 .tl-headrow{
