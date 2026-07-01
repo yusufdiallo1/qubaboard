@@ -36,7 +36,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               if(t==='dark')r.setAttribute('data-theme','dark');
               r.setAttribute('lang',l);
               r.setAttribute('dir',l==='ar'?'rtl':'ltr');
-            }catch(e){}})();`,
+            }catch(e){}})();
+            /* Auto-reload on chunk 404 — fixes stale cache white screen */
+            window.addEventListener('error',function(e){
+              var src=e.filename||'';
+              if(src.indexOf('/_next/')!==-1&&!sessionStorage.getItem('quba-reloaded')){
+                sessionStorage.setItem('quba-reloaded','1');
+                location.reload(true);
+              }
+            },true);
+            /* Register service worker */
+            if('serviceWorker' in navigator){
+              navigator.serviceWorker.register('/sw.js').catch(function(){});
+            }`,
           }}
         />
         <link rel="manifest" href="/manifest.json" />
