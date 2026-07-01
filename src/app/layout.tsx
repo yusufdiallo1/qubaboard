@@ -24,8 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/*
           Blocking script — runs before first paint.
           1. Theme/lang from localStorage (no flash)
-          2. Nuke every service worker + every cache, then hard-reload
-             so the browser always fetches fresh JS chunks after a deploy.
+          2. On first load: nuke any SW + caches left by old deploys, reload once
+          3. On chunk errors: reload once with cache-busted URL
         */}
         <script
           dangerouslySetInnerHTML={{
@@ -40,47 +40,51 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 h.setAttribute('dir',l==='ar'?'rtl':'ltr');
               }catch(e){}
 
-              /* 2 ── Hard-reload helper (deduplicated) */
+              /* 2 ── One-time SW + cache nuke */
+              /* Guard via sessionStorage so redirects can't reset the flag */
+              /* (prevents infinite loop even when auth redirects strip ?_v= param) */
+              var _nuked=false;
+              try{ _nuked=!!sessionStorage.getItem('quba-nuked'); }catch(e){}
               var _reloading=false;
               function hardReload(){
                 if(_reloading)return;
                 _reloading=true;
-                var u=window.location.pathname;
-                /* cache-busting query param ensures disk cache is bypassed */
-                window.location.replace(u+'?_v='+Date.now());
+                try{ sessionStorage.setItem('quba-nuked','1'); }catch(e){}
+                window.location.replace(window.location.pathname+'?_v='+Date.now());
               }
 
-              /* 3 ── Kill every service worker, then kill every cache */
-              /*      If anything existed → hard-reload so fresh chunks load */
-              try{
-                var _swKilled=false;
-                var _cacheKilled=false;
-                function reloadIfNeeded(){
-                  if(_swKilled||_cacheKilled) hardReload();
-                }
-                if('serviceWorker' in navigator){
-                  /* Message from sw.js when it self-destructs */
-                  navigator.serviceWorker.addEventListener('message',function(ev){
-                    if(ev&&ev.data&&ev.data.type==='SW_SELF_DESTRUCT') hardReload();
-                  });
-                  navigator.serviceWorker.getRegistrations().then(function(regs){
-                    if(!regs.length) return;
-                    _swKilled=true;
-                    Promise.all(regs.map(function(r){ return r.unregister(); }))
-                      .then(reloadIfNeeded);
-                  });
-                }
-                if('caches' in window){
-                  caches.keys().then(function(keys){
-                    if(!keys.length) return;
-                    _cacheKilled=true;
-                    Promise.all(keys.map(function(k){ return caches.delete(k); }))
-                      .then(reloadIfNeeded);
-                  });
-                }
-              }catch(e){}
+              if(!_nuked){
+                try{
+                  /* Kill any leftover SW from old deploys */
+                  if('serviceWorker' in navigator){
+                    navigator.serviceWorker.addEventListener('message',function(ev){
+                      if(ev&&ev.data&&ev.data.type==='SW_SELF_DESTRUCT') hardReload();
+                    });
+                    navigator.serviceWorker.getRegistrations().then(function(regs){
+                      if(!regs.length) return;
+                      Promise.all(regs.map(function(r){ return r.unregister(); }))
+                        .then(function(){
+                          if('caches' in window){
+                            caches.keys().then(function(keys){
+                              Promise.all(keys.map(function(k){ return caches.delete(k); }))
+                                .then(hardReload);
+                            });
+                          } else { hardReload(); }
+                        });
+                    });
+                  }
+                  /* Kill any leftover caches (even without a SW) */
+                  if('caches' in window){
+                    caches.keys().then(function(keys){
+                      if(!keys.length) return;
+                      Promise.all(keys.map(function(k){ return caches.delete(k); }))
+                        .then(hardReload);
+                    });
+                  }
+                }catch(e){}
+              }
 
-              /* 4 ── Catch chunk-load failures → hard-reload */
+              /* 3 ── Chunk-load failure → reload once */
               window.addEventListener('error',function(e){
                 var s=(e.filename||e.message||'');
                 if(s.indexOf('/_next/')!==-1||s.indexOf('ChunkLoad')!==-1) hardReload();
