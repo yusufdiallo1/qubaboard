@@ -37,7 +37,7 @@
   --perf-good:#37b87b; --perf-mod:#d3b264; --perf-bad:#dd6363;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{height:100%;overflow-x:hidden}
 body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   font-variant-numeric:tabular-nums;font-feature-settings:"tnum";min-height:100dvh;
@@ -113,7 +113,7 @@ input,select{font-family:inherit}
 .navitem.on{background:color-mix(in srgb,var(--gold) 11%,var(--surface-2));color:var(--text)}
 [data-theme="dark"] .navitem.on{background:color-mix(in srgb,var(--gold) 14%,var(--surface-2))}
 .navitem.on::before{content:"";position:absolute;inset-inline-start:0;top:9px;bottom:9px;width:3px;border-radius:99px;background:var(--gold)}
-.content{flex:1;min-width:0;padding:16px clamp(16px,4vw,32px) 80px}
+.content{flex:1;min-width:0;padding:16px clamp(16px,4vw,32px) 80px;overflow-x:hidden}
 @media(max-width:899px){
   .layout{flex-direction:column;min-height:0}
   .sidenav{width:auto;min-height:0;flex-direction:row;gap:8px;overflow-x:auto;padding:12px clamp(14px,3vw,28px);
@@ -275,6 +275,13 @@ input,select{font-family:inherit}
 
 .panels{display:grid;gap:16px;grid-template-columns:1fr 1fr;margin-top:16px;margin-inline:2px}
 @media(max-width:820px){.panels{grid-template-columns:1fr}}
+/* Mobile overview: hide charts, show notice */
+.ov-mobile-notice{display:none}
+@media(max-width:640px){
+  .ov-mobile-notice{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:32px 20px;color:var(--dim);font-size:14px;font-weight:600;line-height:1.5}
+  .ov-mobile-notice svg{color:var(--gold);opacity:.7}
+  .ov-charts{display:none!important}
+}
 .panel{background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-radius:var(--radius);padding:16px;box-shadow:var(--glass-sheen),var(--shadow)}
 .panel h3{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text)}
 .donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center}
@@ -388,8 +395,8 @@ input,select{font-family:inherit}
 .prop-coming-label{font-size:22px;font-weight:800;color:var(--gold-deep)}
 .prop-coming-desc{font-size:14px;color:var(--dim);line-height:1.6;max-width:320px}
 /* Property single-unit pages (Villa / Apt) */
-.prop-tile{width:100%;max-width:480px;display:block;margin-bottom:16px}
-.prop-add-btn{width:100%;max-width:480px;margin-bottom:24px}
+.prop-tile{width:100%;display:block;margin-bottom:16px}
+.prop-add-btn{width:100%;margin-bottom:24px}
 .audit-header{display:flex;align-items:center;justify-content:space-between}
 .audit-header h3{margin:0;font-size:15px;font-weight:700}
 .audit-header.open{margin-bottom:14px}
@@ -596,8 +603,8 @@ input,select{font-family:inherit}
    CALENDAR — Apple Calendar style month view + header row
 ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Page header row: title + toggle inline */
-.cal-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px}
+/* Calendar toggle row — left-aligned above the calendar */
+.cal-toggle-row{display:flex;align-items:center;margin-bottom:14px}
 .cal-top-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 
 /* Month view wrapper */
@@ -688,7 +695,7 @@ input,select{font-family:inherit}
 .sh-rnum{display:flex;flex-direction:column;line-height:1.05}
 .sh-rnum span{font-size:11.5px;color:var(--faint);font-weight:700;letter-spacing:.05em}
 .sh-rnum b{font-size:26px;font-weight:800;letter-spacing:-.02em}
-.sh-status{margin-inline-start:auto}
+.sh-status{margin-inline-start:auto;flex-shrink:0;white-space:nowrap}
 .sh-close{width:44px;height:44px;border-radius:50%;background:var(--surface-2);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:grid;place-items:center;transition:background .15s,transform .12s}
 .sh-close:hover{background:var(--surface)}
 .sh-close svg{width:18px;height:18px}

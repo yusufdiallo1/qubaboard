@@ -826,6 +826,17 @@ export default function OverviewScreen() {
         />
       </div>
 
+      {/* ── Mobile notice ── */}
+      <div className="ov-mobile-notice">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        <p>{lang === 'ar' ? 'للاطلاع على التحليلات التفصيلية، يرجى استخدام جهاز بشاشة أكبر' : 'To see detailed analytics, please use a bigger device'}</p>
+      </div>
+
+      {/* ── All charts — hidden on mobile ── */}
+      <div className="ov-charts">
+
       {/* ── Donuts ── */}
       <div className="panels reveal" style={{ marginTop: 14 }}>
         <div className="panel">
@@ -976,6 +987,7 @@ export default function OverviewScreen() {
         </div>
       </div>
 
+      </div>{/* /ov-charts */}
     </div>
   );
 }

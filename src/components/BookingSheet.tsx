@@ -1041,8 +1041,13 @@ export default function BookingSheet() {
           {/* ─── Header ─── */}
           <div className="sh-head">
             <div className="sh-rnum">
-              <span>{tl("roomWord")}</span>
-              <b>{roomNo}</b>
+              {roomNo === 21 ? (
+                <><span>{lang === "ar" ? "عقار" : "Property"}</span><b>{lang === "ar" ? "فيلا" : "Villa"}</b></>
+              ) : roomNo === 22 ? (
+                <><span>{lang === "ar" ? "عقار" : "Property"}</span><b>{lang === "ar" ? "شقة" : "Apt"}</b></>
+              ) : (
+                <><span>{tl("roomWord")}</span><b>{roomNo}</b></>
+              )}
             </div>
             <span
               className="spill sh-status"

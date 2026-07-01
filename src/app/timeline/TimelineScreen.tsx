@@ -425,12 +425,12 @@ export default function TimelineScreen() {
 
   return (
     <div>
-      {/* Page header row: title left, toggle right */}
-      <div className="cal-header-row">
-        <div>
-          <h1 className="page-h" style={{ margin: 0 }}>{t.timelineTitle}</h1>
-          <p className="page-sub" style={{ margin: "2px 0 0" }}>{t.timelineSub}</p>
-        </div>
+      {/* Page header */}
+      <h1 className="page-h">{t.timelineTitle}</h1>
+      <p className="page-sub">{t.timelineSub}</p>
+
+      {/* Toggle sits above the calendar, aligned start (left in LTR, right in RTL) */}
+      <div className="cal-toggle-row">
         <CalViewToggle />
       </div>
 
