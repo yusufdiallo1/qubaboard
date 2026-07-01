@@ -92,8 +92,9 @@ function TimelineView() {
   const { y: viewY, m: viewM } = parseParts(viewMonthFirst);
   const dim = daysInMonth(viewY, viewM);
 
-  const pageStart = tlChunk * 10 + 1;
-  const pageEnd = tlChunk < 2 ? Math.min(tlChunk * 10 + 10, dim) : dim;
+  // tlChunk is now used as the start day (1-based), not a chunk index
+  const pageStart = Math.max(1, Math.min(tlChunk, dim - 6));
+  const pageEnd = Math.min(pageStart + 6, dim);
   const N = pageEnd - pageStart + 1;
 
   const pageStartISO = isoAdd(viewMonthFirst, pageStart - 1);
@@ -108,19 +109,27 @@ function TimelineView() {
   const rangeLabel = `${pageStart}–${pageEnd} ${t.months[viewM - 1]} ${viewY}`;
 
   const handleNext = useCallback(() => {
-    if (tlChunk < 2) dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: tlChunk + 1 } });
-    else dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset + 1, chunk: 0 } });
-  }, [dispatch, tlMonthOffset, tlChunk]);
+    const nextStart = pageStart + 7;
+    if (nextStart <= dim) {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: nextStart } });
+    } else {
+      // Move to next month, start at day 1
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset + 1, chunk: 1 } });
+    }
+  }, [dispatch, tlMonthOffset, pageStart, dim]);
 
   const handlePrev = useCallback(() => {
-    if (tlChunk > 0) dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: tlChunk - 1 } });
-    else dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset - 1, chunk: 2 } });
-  }, [dispatch, tlMonthOffset, tlChunk]);
+    const prevStart = pageStart - 7;
+    if (prevStart >= 1) {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset, chunk: prevStart } });
+    } else {
+      dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: tlMonthOffset - 1, chunk: 1 } });
+    }
+  }, [dispatch, tlMonthOffset, pageStart]);
 
   const handleToday = useCallback(() => {
     const todayDay = new Date().getDate();
-    const chunk = todayDay <= 10 ? 0 : todayDay <= 20 ? 1 : 2;
-    dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: 0, chunk } });
+    dispatch({ type: "SET_TL_PAGE", payload: { monthOffset: 0, chunk: todayDay } });
   }, [dispatch]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

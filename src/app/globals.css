@@ -414,10 +414,8 @@ input,select{font-family:inherit}
 .prop-coming-label{font-size:22px;font-weight:800;color:var(--gold-deep)}
 .prop-coming-desc{font-size:14px;color:var(--dim);line-height:1.6;max-width:320px}
 /* Property single-unit pages (Villa / Apt) */
-.prop-tile{width:100%;display:block;margin-bottom:16px;min-height:180px}
-.prop-tile .tile-inner{padding:20px}
-.prop-tile .rnum b{font-size:32px}
-.prop-add-btn{width:100%;margin-bottom:24px;padding:18px 24px;font-size:16px}
+.prop-tile{width:100%;display:block;margin-bottom:16px;height:auto!important;min-height:200px;padding:20px}
+.prop-add-btn{width:100%;margin-bottom:24px;padding:17px 24px;font-size:15px;font-weight:700}
 .audit-header{display:flex;align-items:center;justify-content:space-between}
 .audit-header h3{margin:0;font-size:15px;font-weight:700}
 .audit-header.open{margin-bottom:14px}
