@@ -458,43 +458,41 @@ input,select{font-family:inherit}
 /* thin dividers between arrow and Today label */
 .tl-nav-div{width:1px;height:20px;background:var(--line);flex:none}
 .tl-todaybtn{
-  padding:0 16px;height:42px;
+  padding:0 18px;height:42px;
   font-size:14px;font-weight:800;
-  color:var(--gold);
-  background:var(--surface);border:1px solid var(--line);
+  color:#1b1407;
+  background:var(--gold);
+  border:none;
   border-radius:980px;
-  box-shadow:var(--shadow-lift);
+  box-shadow:0 4px 16px -6px rgba(198,162,83,.6);
   letter-spacing:.01em;
   cursor:pointer;
   white-space:nowrap;
   flex:none;
+  transition:filter .15s,transform .12s;
 }
-.tl-todaybtn:hover{opacity:.8}
-.tl-todaybtn:active{transform:scale(.96)}
+.tl-todaybtn:hover{filter:brightness(1.08)}
+.tl-todaybtn:active{transform:scale(.94)}
 .tl-today-standalone{margin-inline-end:2px}
 .tl-legend{display:flex;align-items:center;gap:14px;margin-inline-start:auto;flex-wrap:wrap}
 .tl-legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--dim)}
 .tl-legend .li .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
 /* Timeline scroll container — no min-width; CSS grid fills the container */
 .tl-scroll{border-radius:var(--radius);background:var(--surface);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:var(--glass-sheen),var(--shadow-lift);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
-.tl-headrow,.tl-row{min-width:520px} /* ensure at least 7 readable day columns at 44px each */
+.tl-headrow,.tl-row{min-width:360px} /* 52px room + 7×44px day = 360px minimum */
 
 /* Floating glass pill — the date header row (CSS grid; columns set inline) */
 .tl-headrow{
   display:grid;
-  margin:10px 10px 6px;
-  border-radius:16px;
-  background:color-mix(in srgb,var(--cream,#f5f0e8) 60%,transparent);
-  backdrop-filter:blur(20px) saturate(140%);
-  -webkit-backdrop-filter:blur(20px) saturate(140%);
-  border:1px solid color-mix(in srgb,var(--gold) 30%,rgba(210,190,150,.35));
-  box-shadow:0 2px 12px rgba(180,150,80,.08), 0 0 0 1px rgba(255,255,255,.55) inset;
-  overflow:hidden;
+  margin:0 0 6px;
+  border-radius:0;
+  background:color-mix(in srgb,var(--cream,#f5f0e8) 15%,var(--surface-2));
+  border-bottom:1px solid color-mix(in srgb,var(--gold) 22%,var(--line));
+  overflow:visible;
 }
 [data-theme="dark"] .tl-headrow{
-  background:color-mix(in srgb,var(--navy-deep,#0e1726) 85%,transparent);
-  border-color:color-mix(in srgb,var(--gold) 20%,rgba(255,255,255,.06));
-  box-shadow:0 2px 20px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.05) inset;
+  background:rgba(255,255,255,.04);
+  border-color:color-mix(in srgb,var(--gold) 18%,rgba(255,255,255,.06));
 }
 .tl-corner{display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--faint);border-inline-end:1px solid color-mix(in srgb,var(--gold) 18%,var(--line))}
 .tl-day{padding:10px 4px 10px;text-align:center;border-inline-start:1px solid var(--line-soft)}
