@@ -37,18 +37,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               r.setAttribute('lang',l);
               r.setAttribute('dir',l==='ar'?'rtl':'ltr');
             }catch(e){}})();
-            /* Auto-reload on chunk 404 — fixes stale cache white screen */
+            /* Nuke all service workers — they cause stale chunk issues */
+            if('serviceWorker' in navigator){
+              navigator.serviceWorker.getRegistrations().then(function(regs){
+                regs.forEach(function(r){ r.unregister(); });
+              });
+              caches.keys().then(function(keys){
+                keys.forEach(function(k){ caches.delete(k); });
+              });
+            }
+            /* Auto-reload on chunk 404 */
             window.addEventListener('error',function(e){
               var src=e.filename||'';
-              if(src.indexOf('/_next/')!==-1&&!sessionStorage.getItem('quba-reloaded')){
-                sessionStorage.setItem('quba-reloaded','1');
+              if(src.indexOf('/_next/')!==-1&&!sessionStorage.getItem('quba-chunk-reload')){
+                sessionStorage.setItem('quba-chunk-reload','1');
                 location.reload(true);
               }
-            },true);
-            /* Register service worker */
-            if('serviceWorker' in navigator){
-              navigator.serviceWorker.register('/sw.js').catch(function(){});
-            }`,
+            },true);`,
           }}
         />
         <link rel="manifest" href="/manifest.json" />
