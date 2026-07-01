@@ -3,7 +3,7 @@
   "short_name": "Quba",
   "description": "Front-desk room board, bookings, and occupancy analytics for Aurion Hotels.",
   "start_url": "/board",
-  "display": "standalone",
+  "display": "browser",
   "orientation": "any",
   "background_color": "#F5F3EE",
   "theme_color": "#1B2A47",

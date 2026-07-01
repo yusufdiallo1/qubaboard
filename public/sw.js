@@ -1,13 +1,23 @@
-// SW v7 — self-destruct. We rely on HTTP Cache-Control headers instead.
-// This unregisters itself and all other service workers, then reloads clients.
-self.addEventListener('install', () => self.skipWaiting());
+// SW v8 — nuclear self-destruct. Never caches anything. Unregisters itself immediately.
+// This file exists ONLY to clean up any previously registered service workers.
+
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    Promise.all([
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))),
+      self.clients.claim(),
+    ])
       .then(() => self.registration.unregister())
-      .then(() => self.clients.matchAll({ type: 'window' }))
-      .then((clients) => clients.forEach((c) => c.navigate(c.url)))
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then((clients) => {
+        clients.forEach((c) => c.postMessage({ type: 'SW_SELF_DESTRUCT' }));
+      })
   );
 });
+
+// Never intercept any fetch
+self.addEventListener('fetch', () => {});
