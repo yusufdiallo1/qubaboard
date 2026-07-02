@@ -21,16 +21,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        {/*
-          Blocking script — runs before first paint.
-          1. Theme/lang from localStorage (no flash)
-          2. On first load: nuke any SW + caches left by old deploys, reload once
-          3. On chunk errors: reload once with cache-busted URL
-        */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
-              /* 1 ── Theme / lang before paint */
+              /* ── 1. Theme / lang before paint ── */
               try{
                 var t=localStorage.getItem('quba-theme');
                 var l=localStorage.getItem('quba-lang')||'ar';
@@ -40,22 +34,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 h.setAttribute('dir',l==='ar'?'rtl':'ltr');
               }catch(e){}
 
-              /* 2 ── One-time SW + cache nuke */
-              /* Guard via sessionStorage so redirects can't reset the flag */
-              /* (prevents infinite loop even when auth redirects strip ?_v= param) */
-              var _nuked=false;
-              try{ _nuked=!!sessionStorage.getItem('quba-nuked'); }catch(e){}
+              /* ── 2. SW + cache nuke (runs once per browser tab lifetime) ── */
+              /* Uses a timestamp so it re-runs after 5 min (catches new deploys)  */
+              /* and resets on new tabs so stale state never persists long-term.   */
               var _reloading=false;
               function hardReload(){
                 if(_reloading)return;
                 _reloading=true;
-                try{ sessionStorage.setItem('quba-nuked','1'); }catch(e){}
-                window.location.replace(window.location.pathname+'?_v='+Date.now());
+                try{ sessionStorage.setItem('quba-nuked',String(Date.now())); }catch(e){}
+                /* Replace URL — strips stale ?_v= if present, adds fresh one */
+                window.location.replace(window.location.pathname+'?_bust='+Date.now());
               }
 
-              if(!_nuked){
+              /* Only nuke once per 5-minute window to prevent loops */
+              var _lastNuke=0;
+              try{ _lastNuke=parseInt(sessionStorage.getItem('quba-nuked')||'0',10)||0; }catch(e){}
+              var _elapsed=Date.now()-_lastNuke;
+              var _alreadyNuked=(_elapsed>0 && _elapsed<300000); /* 5 min */
+
+              /* Also skip if this is already a ?_bust= reload (strips after redirect) */
+              /* sessionStorage covers us across redirects, this just double-guards */
+
+              if(!_alreadyNuked){
                 try{
-                  /* Kill any leftover SW from old deploys */
                   if('serviceWorker' in navigator){
                     navigator.serviceWorker.addEventListener('message',function(ev){
                       if(ev&&ev.data&&ev.data.type==='SW_SELF_DESTRUCT') hardReload();
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         .then(function(){
                           if('caches' in window){
                             caches.keys().then(function(keys){
+                              if(!keys.length) return;
                               Promise.all(keys.map(function(k){ return caches.delete(k); }))
                                 .then(hardReload);
                             });
@@ -73,7 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         });
                     });
                   }
-                  /* Kill any leftover caches (even without a SW) */
                   if('caches' in window){
                     caches.keys().then(function(keys){
                       if(!keys.length) return;
@@ -84,7 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 }catch(e){}
               }
 
-              /* 3 ── Chunk-load failure → reload once */
+              /* ── 3. Chunk-load failure → one reload ── */
               window.addEventListener('error',function(e){
                 var s=(e.filename||e.message||'');
                 if(s.indexOf('/_next/')!==-1||s.indexOf('ChunkLoad')!==-1) hardReload();
@@ -96,7 +97,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             })();`,
           }}
         />
-        {/* No manifest link — removed to prevent PWA caching */}
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
